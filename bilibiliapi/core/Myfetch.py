@@ -2,7 +2,7 @@
 import requests
 import logging
 import yaml
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+import json
 class Fetch:
     """
     【第一层：底层网络请求引擎】
@@ -46,7 +46,7 @@ class Fetch:
             return None
 class Spider(Fetch):
     """
-    【第二层：B站业务爬虫类】
+    【第二层:B站业务爬虫类】
     职责：继承 Fetch 的网络能力，专门处理 B站 相关的接口地址拼接、翻页逻辑和数据提取。
     """
     def __init__(self,config_path='setting.yaml'):
@@ -54,7 +54,7 @@ class Spider(Fetch):
         super().__init__(config_path)
         # 从配置字典中读取 API 地址（加入 default 后备方案，万一 yaml 里没写也不会报错）
         self.base_url = self.config.get("api", {}).get("base_url", "https://api.bilibili.com")
-        self.popular_endpoint = self.config.get("api", {}).get("popular_endpoint", "/x/web-interface/popular/region")   
+        self.popular_endpoint = self.config.get("api", {}).get("popular_endpoint", "/x/web-interface/popular")   
         self.page_size = self.config.get("spider", {}).get("page_size", 20)
     
     def get_popular_page(self,pn=1):
@@ -80,7 +80,7 @@ class Spider(Fetch):
             if not data or data.get("code") != 0:
                 logging.warning(f"第 {pn} 页数据异常，停止抓取")
                 break
-            page_items = data.get("data", {}).get("list", [])
+            page_items = data.get("data", {}).get("list", [])#每页的视频列表
             if not page_items:
                 logging.info(f"第 {pn} 页没有数据了，停止抓取")
                 break
@@ -88,5 +88,7 @@ class Spider(Fetch):
             if max_items and len(items) >= max_items:
                 logging.info(f"已达到最大条数 {max_items}，停止抓取")
                 break
+        with open('data/raw_popular.json', 'w', encoding='utf-8') as f:
+            json.dump(items, f, ensure_ascii=False, indent=4)
         return items
     
