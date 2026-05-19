@@ -1,0 +1,11 @@
+# settings.yaml
+
+# API 接口配置
+api:
+  base_url: https://api.bilibili.com
+  popular: /x/web-interface/popular
+
+# 爬虫运行参数
+spider:
+  max_pages: 100
+  page_size: 20
