@@ -11,7 +11,7 @@ class Cleaner:
         df = pd.DataFrame(parsed_data)
         
         # 2. 清洗逻辑：时间戳转换
-        df['pub_date'] = pd.to_datetime(df['pub_timestamp'], unit='s')
+        df['pub_date'] = pd.to_datetime(df['pub_date'], unit='s')
         
         # 3. 清洗逻辑：去重
         df = df.drop_duplicates(subset=['bvid'])

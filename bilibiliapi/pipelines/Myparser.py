@@ -22,11 +22,10 @@ class Parser:
                 "投币数": entry.get("stat", {}).get("coin"),
                 "收藏数": entry.get("stat", {}).get("favorite"),
                 "分区": entry.get("tname"),
-                "发布时间": entry.get("pubdate"),
+                "pub_date": entry.get("pubdate"),
                 "视频链接": f"https://www.bilibili.com/video/{entry.get('bvid')}",
                 "封面链接": entry.get("pic"),
                 "时长": entry.get("duration"),
-                "pub_timestamp": entry.get("pubdate")
             }
             items.append(item)
         return items
