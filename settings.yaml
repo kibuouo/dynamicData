@@ -1,0 +1,9 @@
+# B站热门视频项目配置
+
+api:
+  base_url: https://api.bilibili.com
+  popular_endpoint: /x/web-interface/popular
+
+spider:
+  max_pages: 100
+  page_size: 20

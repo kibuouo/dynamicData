@@ -1,16 +1,15 @@
-import logging
 class Parser:
-    """
-    【第三层：数据解析类】
-    职责：专注于从原始 JSON 数据中提取出我们需要的字段，进行清洗和结构化处理。
-    """
-    def parser_popular_items(raw_data):
+    """把 B站接口返回的原始 JSON 转成项目需要的字段列表。"""
+
+    @staticmethod
+    def parse_popular_items(raw_data):
         """
-        从原始的热门视频 JSON 数据中提取出我们关心的字段
-        :param raw_data: 原始 JSON 数据（字典格式）
-        :return: 结构化的热门视频列表，每个视频是一个字典
+        从热门视频 JSON 数据中提取关心的字段。
+
+        返回值是列表，列表中的每个元素是一条视频记录。
         """
         items = []
+
         for entry in raw_data:
             item = {
                 "bvid": entry.get("bvid"),
@@ -28,4 +27,5 @@ class Parser:
                 "时长": entry.get("duration"),
             }
             items.append(item)
+
         return items
