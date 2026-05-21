@@ -85,6 +85,7 @@ class Spider(Fetch):
             or "/x/web-interface/popular"
         )
         self.page_size = spider_config.get("page_size", 20)
+        self.max_items = spider_config.get("max_items", 200)
         self.max_pages = spider_config.get("max_pages", 100)
 
     def get_popular_page(self, pn=1):
@@ -103,7 +104,8 @@ class Spider(Fetch):
 
         max_items 控制最多保留多少条数据，max_pages 用来避免无限翻页。
         """
-        max_pages = max_pages or self.max_pages
+        if max_pages is None:
+            max_pages = self.max_pages
         items = []
 
         for pn in range(1, max_pages + 1):

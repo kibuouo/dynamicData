@@ -20,7 +20,19 @@ class Saver:
 
     @staticmethod
     def _quote_identifier(identifier):
+        """安全处理 SQLite 表名、字段名，避免特殊字符导致 SQL 出错。"""
         return '"' + str(identifier).replace('"', '""') + '"'
+
+    def _ensure_table_columns(self, conn, table_name, columns):
+        """已有表缺少新字段时，自动补充字段。"""
+        quoted_table = self._quote_identifier(table_name)
+        cursor = conn.execute(f"PRAGMA table_info({quoted_table})")
+        existing_columns = {row[1] for row in cursor.fetchall()}
+
+        for column in columns:
+            if column not in existing_columns:
+                quoted_column = self._quote_identifier(column)
+                conn.execute(f"ALTER TABLE {quoted_table} ADD COLUMN {quoted_column} TEXT")
 
     def save_to_csv(self, df, filename="popular_cleaned.csv"):
         save_path = self.save_dir / filename
@@ -73,7 +85,9 @@ class Saver:
                     else:
                         update_clause = "DO NOTHING"
 
+                    # 先创建目标表结构，再清理历史重复 bvid。
                     write_df.head(0).to_sql(table_name, conn, if_exists="append", index=False)
+                    self._ensure_table_columns(conn, table_name, write_df.columns)
                     conn.execute(
                         f"""
                         DELETE FROM {quoted_table}
@@ -86,6 +100,8 @@ class Saver:
                           )
                         """
                     )
+
+                    # 给 bvid 建唯一索引，后续插入时才能按 bvid 更新已有记录。
                     conn.execute(
                         f"""
                         CREATE UNIQUE INDEX IF NOT EXISTS {index_name}
@@ -93,6 +109,8 @@ class Saver:
                         WHERE {quoted_bvid} IS NOT NULL
                         """
                     )
+
+                    # 用临时表承接 pandas 写入结果，再合并到正式表。
                     conn.execute(f"DROP TABLE IF EXISTS {quoted_tmp_table}")
                     write_df.to_sql(tmp_table_name, conn, if_exists="replace", index=False)
                     conn.execute(

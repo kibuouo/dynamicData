@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>B站热门视频数据看板</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+    <main class="page">
+        <header class="page-header">
+            <div>
+                <h1>B站热门视频数据看板</h1>
+                <p>基于本地 SQLite 数据库，展示热门视频、播放量和分区概览。</p>
+            </div>
+            <a class="api-link" href="{{ url_for('videos') }}">查看 JSON API</a>
+        </header>
+
+        <section class="metrics" aria-label="数据概览">
+            <article class="metric">
+                <span>视频数量</span>
+                <strong>{{ summary.get("video_count", 0) | number }}</strong>
+            </article>
+            <article class="metric">
+                <span>总播放量</span>
+                <strong>{{ summary.get("total_views", 0) | number }}</strong>
+            </article>
+            <article class="metric">
+                <span>平均播放量</span>
+                <strong>{{ summary.get("avg_views", 0) | number }}</strong>
+            </article>
+            <article class="metric">
+                <span>总点赞数</span>
+                <strong>{{ summary.get("total_likes", 0) | number }}</strong>
+            </article>
+        </section>
+
+        <section class="content-grid">
+            <section class="panel">
+                <div class="section-heading">
+                    <h2>热门视频 Top 50</h2>
+                    <span>按播放量降序</span>
+                </div>
+
+                {% if videos %}
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>排名</th>
+                                    <th>标题</th>
+                                    <th>UP主</th>
+                                    <th>分区</th>
+                                    <th>播放量</th>
+                                    <th>点赞数</th>
+                                    <th>时长</th>
+                                    <th>抓取时间</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for video in videos %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td>
+                                            <a href="{{ video.get('视频链接') }}" target="_blank" rel="noreferrer">
+                                                {{ video.get("视频标题", "未命名视频") }}
+                                            </a>
+                                        </td>
+                                        <td>{{ video.get("UP主", "-") }}</td>
+                                        <td>{{ video.get("分区", "-") }}</td>
+                                        <td>{{ video.get("播放量", 0) | number }}</td>
+                                        <td>{{ video.get("点赞数", 0) | number }}</td>
+                                        <td>{{ video.get("时长") | duration }}</td>
+                                        <td>{{ video.get("抓取时间", "-") }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <h2>还没有可展示的数据</h2>
+                        <p>请先在项目根目录运行 <code>python -m bilibiliapi</code> 生成数据库。</p>
+                    </div>
+                {% endif %}
+            </section>
+
+            <aside class="panel side-panel">
+                <div class="section-heading">
+                    <h2>分区概览</h2>
+                    <span>按播放量排序</span>
+                </div>
+
+                {% if categories %}
+                    <ul class="category-list">
+                        {% for category in categories %}
+                            <li>
+                                <div>
+                                    <strong>{{ category.get("category") or "未分类" }}</strong>
+                                    <span>{{ category.get("video_count", 0) }} 个视频</span>
+                                </div>
+                                <em>{{ category.get("total_views", 0) | number }}</em>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="muted">暂无分区数据。</p>
+                {% endif %}
+            </aside>
+        </section>
+    </main>
+</body>
+</html>
