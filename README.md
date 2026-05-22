@@ -18,7 +18,6 @@ dynamicData/
 │   └── web/
 │       ├── app.py           # Flask Web/API 入口
 │       └── db.py            # SQLite 查询函数
-├── check_db.py              # 查看 SQLite 表和字段
 ├── settings.yaml            # 项目配置
 ├── requirements.txt         # Python 依赖
 └── README.md
@@ -116,11 +115,3 @@ python -m bilibiliapi
 
 如果抓取失败，先检查网络是否能访问 B站接口，并降低请求量。这个项目只做普通学习用途，不做高频请求。
 
-## Git 提交建议
-
-这次整理适合单独提交一次：
-
-```powershell
-git add .
-git commit -m "Refactor project structure and add README"
-```
