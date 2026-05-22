@@ -49,6 +49,7 @@
                                 <tr>
                                     <th>排名</th>
                                     <th>标题</th>
+                                    <th>在线人数</th>
                                     <th>UP主</th>
                                     <th>分区</th>
                                     <th>播放量</th>
@@ -65,6 +66,13 @@
                                             <a href="{{ video.get('视频链接') }}" target="_blank" rel="noreferrer">
                                                 {{ video.get("视频标题", "未命名视频") }}
                                             </a>
+                                        </td>
+                                        <td>
+                                            {% if video.get("在线人数") is not none and video.get("在线人数") != "" %}
+                                                {{ video.get("在线人数") | number }}
+                                            {% else %}
+                                                <span class="muted">未获取</span>
+                                            {% endif %}
                                         </td>
                                         <td>{{ video.get("UP主", "-") }}</td>
                                         <td>{{ video.get("分区", "-") }}</td>

@@ -12,7 +12,9 @@ class Parser:
 
         for entry in raw_data:
             item = {
+                "aid": entry.get("aid"),
                 "bvid": entry.get("bvid"),
+                "cid": entry.get("cid"),
                 "视频标题": entry.get("title"),
                 "UP主": entry.get("owner", {}).get("name"),
                 "播放量": entry.get("stat", {}).get("view"),

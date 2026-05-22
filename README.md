@@ -10,7 +10,10 @@ dynamicData/
 │   ├── __main__.py          # 支持 python -m bilibiliapi 运行
 │   ├── main.py              # 主流程入口：抓取、解析、清洗、保存
 │   ├── core/
-│   │   └── fetcher.py       # 请求配置读取和 B站接口抓取
+│   │   └── fetcher.py       # 通用请求和配置读取
+│   ├── spiders/
+│   │   ├── __init__.py
+│   │   └── popular_spider.py # 热门视频和在线人数接口抓取
 │   ├── pipelines/
 │   │   ├── parser.py        # 从原始 JSON 提取字段
 │   │   ├── cleaner.py       # 数据清洗
@@ -114,4 +117,3 @@ python -m bilibiliapi
 ```
 
 如果抓取失败，先检查网络是否能访问 B站接口，并降低请求量。这个项目只做普通学习用途，不做高频请求。
-
