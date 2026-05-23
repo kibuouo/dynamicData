@@ -1,5 +1,5 @@
 from flask import Flask, jsonify, render_template, request
-
+from bilibiliapi.spiders.popular_spider import Spider
 from bilibiliapi.web.db import (
     query_all_videos,
     query_category_summary,
@@ -33,6 +33,7 @@ def create_app():
     app = Flask(__name__)
     app.jinja_env.filters["number"] = format_number
     app.jinja_env.filters["duration"] = format_duration
+    spider = Spider()
 
     @app.route("/")
     def index():
@@ -60,6 +61,46 @@ def create_app():
             "categories": query_category_summary(limit=10),
         }
         return jsonify(data)
+
+    @app.route("/api/online-totals", methods=["POST"])
+    def online_totals():
+        videos = request.get_json(silent=True) or []
+        results = []
+
+        for video in videos:
+            bvid = video.get("bvid")
+            cid = video.get("cid")
+            aid = video.get("aid")
+
+            if not bvid or not cid:
+                results.append({
+                    "success": False,
+                    "bvid": bvid,
+                    "count": None,
+                    "message": "缺少 bvid 或 cid",
+                })
+                continue
+
+            data = spider.get_video_online_total(
+                bvid=bvid,
+                cid=cid,
+                aid=aid,
+            )
+            count = data.get("count") if data else None
+            if count is not None:
+                try:
+                    count = int(count)
+                except (TypeError, ValueError):
+                    count = None
+
+            results.append({
+                "success": data is not None,
+                "bvid": bvid,
+                "count": count,
+                "message": None if data else "获取在线人数失败",
+            })
+
+        return jsonify(results)
 
     return app
 

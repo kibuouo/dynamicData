@@ -44,7 +44,7 @@ class Fetch:
 
         return {}
 
-    def fetch_json(self, url, headers=None, params=None):
+    def fetch_json(self, url, headers=None, params=None, timeout=10):
         """
         发送 GET 请求并返回 JSON 数据。
 
@@ -58,7 +58,7 @@ class Fetch:
                 url,
                 headers=headers,
                 params=params,
-                timeout=10,
+                timeout=timeout,
             )
             response.raise_for_status()
             return response.json()

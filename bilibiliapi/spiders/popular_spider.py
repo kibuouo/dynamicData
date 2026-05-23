@@ -66,7 +66,7 @@ class Spider(Fetch):
         else:
             params["aid"] = aid
 
-        data = self.fetch_json(url, params=params)
+        data = self.fetch_json(url, params=params, timeout=3)
         if not data or data.get("code") != 0:
             logging.warning("实时在线人数接口返回异常: %s", data)
             return None

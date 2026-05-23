@@ -68,11 +68,12 @@
                                             </a>
                                         </td>
                                         <td>
-                                            {% if video.get("在线人数") is not none and video.get("在线人数") != "" %}
-                                                {{ video.get("在线人数") | number }}
-                                            {% else %}
-                                                <span class="muted">未获取</span>
-                                            {% endif %}
+                                            <span
+                                                class="online-total muted"
+                                                data-bvid="{{ video.get('bvid') }}"
+                                                data-cid="{{ video.get('cid') }}"
+                                                data-aid="{{ video.get('aid') }}"
+                                            >查询中</span>
                                         </td>
                                         <td>{{ video.get("UP主", "-") }}</td>
                                         <td>{{ video.get("分区", "-") }}</td>
@@ -91,31 +92,9 @@
                         <p>请先在项目根目录运行 <code>python -m bilibiliapi</code> 生成数据库。</p>
                     </div>
                 {% endif %}
-            </section>
-
-            <aside class="panel side-panel">
-                <div class="section-heading">
-                    <h2>分区概览</h2>
-                    <span>按播放量排序</span>
-                </div>
-
-                {% if categories %}
-                    <ul class="category-list">
-                        {% for category in categories %}
-                            <li>
-                                <div>
-                                    <strong>{{ category.get("分区") or "未分类" }}</strong>
-                                    <span>{{ category.get("视频数量", 0) }} 个视频</span>
-                                </div>
-                                <em>{{ category.get("总播放量", 0) | number }}</em>
-                            </li>
-                        {% endfor %}
-                    </ul>
-                {% else %}
-                    <p class="muted">暂无分区数据。</p>
-                {% endif %}
-            </aside>
-        </section>
+ 
+           
     </main>
+    <script src="{{ url_for('static', filename='js/online_totals.js') }}"></script>
 </body>
 </html>
