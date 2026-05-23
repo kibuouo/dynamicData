@@ -1,8 +1,9 @@
 import logging
 import sqlite3
+import pandas as pd
 from contextlib import closing
 from pathlib import Path
-
+from bilibiliapi.analysis.category import analyze_category
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
 DB_PATH = ROOT_DIR / "data" / "cleaned" / "bilibili_data.db"
@@ -96,3 +97,24 @@ def query_category_summary(limit=10):
         return []
 
     return [dict(row) for row in rows]
+def query_category_analysis():
+    """查询分区分析数据，返回 DataFrame 格式。"""
+
+    if not DB_PATH.exists():
+        logging.warning("数据库文件不存在: %s", DB_PATH)
+        return pd.DataFrame()
+
+    try:
+        with closing(get_connection()) as conn:
+            df = pd.read_sql_query(
+                """
+                SELECT *
+                FROM popular_videos
+                """,
+                conn,
+            )
+    except sqlite3.OperationalError as error:
+        logging.error("查询分区分析数据失败: %s", error)
+        return pd.DataFrame()
+    result = analyze_category(df)
+    return result.to_dict(orient="records")

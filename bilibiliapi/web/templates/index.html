@@ -104,10 +104,10 @@
                         {% for category in categories %}
                             <li>
                                 <div>
-                                    <strong>{{ category.get("category") or "未分类" }}</strong>
-                                    <span>{{ category.get("video_count", 0) }} 个视频</span>
+                                    <strong>{{ category.get("分区") or "未分类" }}</strong>
+                                    <span>{{ category.get("视频数量", 0) }} 个视频</span>
                                 </div>
-                                <em>{{ category.get("total_views", 0) | number }}</em>
+                                <em>{{ category.get("总播放量", 0) | number }}</em>
                             </li>
                         {% endfor %}
                     </ul>
