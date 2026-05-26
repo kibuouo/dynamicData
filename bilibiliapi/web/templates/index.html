@@ -35,6 +35,32 @@
             </article>
         </section>
 
+        <section class="chart-grid" aria-label="数据图表">
+            <article class="panel chart-panel chart-panel-wide">
+                <div class="section-heading">
+                    <h2>分区播放量排行</h2>
+                    <span>来自 /api/summary</span>
+                </div>
+                <div id="categoryViewsChart" class="chart"></div>
+            </article>
+
+            <article class="panel chart-panel">
+                <div class="section-heading">
+                    <h2>分区视频占比</h2>
+                    <span>按视频数量统计</span>
+                </div>
+                <div id="categoryCountChart" class="chart"></div>
+            </article>
+
+            <article class="panel chart-panel">
+                <div class="section-heading">
+                    <h2>播放量与点赞关系</h2>
+                    <span>Top 80 视频</span>
+                </div>
+                <div id="likeScatterChart" class="chart"></div>
+            </article>
+        </section>
+
         <section class="content-grid">
             <section class="panel">
                 <div class="section-heading">
@@ -92,9 +118,37 @@
                         <p>请先在项目根目录运行 <code>python -m bilibiliapi</code> 生成数据库。</p>
                     </div>
                 {% endif %}
- 
-           
+            </section>
+
+            <aside class="panel side-panel">
+                <div class="section-heading">
+                    <h2>分区概览</h2>
+                    <span>按播放量排序</span>
+                </div>
+
+                {% if categories %}
+                    <ul class="category-list">
+                        {% for category in categories %}
+                            <li>
+                                <div>
+                                    <strong>{{ category.get("category") or "未分类" }}</strong>
+                                    <span>{{ category.get("video_count", 0) }} 个视频</span>
+                                </div>
+                                <em>{{ category.get("total_views", 0) | number }}</em>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="empty-state">
+                        <p>暂无分区数据。</p>
+                    </div>
+                {% endif %}
+            </aside>
+        </section>
+
     </main>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+    <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
     <script src="{{ url_for('static', filename='js/online_totals.js') }}"></script>
 </body>
 </html>
