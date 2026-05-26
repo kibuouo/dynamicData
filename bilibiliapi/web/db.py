@@ -1,19 +1,60 @@
 import logging
 import sqlite3
-import pandas as pd
 from contextlib import closing
-from pathlib import Path
-from bilibiliapi.analysis.category import analyze_category
-
-ROOT_DIR = Path(__file__).resolve().parents[2]
-DB_PATH = ROOT_DIR / "data" / "cleaned" / "bilibili_data.db"
+from bilibiliapi.database import DB_PATH, get_connection
 
 
-def get_connection():
-    """创建 SQLite 连接，并让查询结果可以转成字典。"""
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+LATEST_SNAPSHOT_CTE = """
+WITH latest_times AS (
+    SELECT
+        bvid,
+        MAX("抓取时间") AS latest_time
+    FROM popular_video_snapshots
+    WHERE bvid IS NOT NULL
+    GROUP BY bvid
+),
+latest_snapshots AS (
+    SELECT snapshots.*
+    FROM popular_video_snapshots AS snapshots
+    JOIN latest_times AS latest
+      ON snapshots.bvid = latest.bvid
+     AND snapshots."抓取时间" = latest.latest_time
+)
+"""
+
+LATEST_VIDEO_SELECT = """
+SELECT
+    videos."aid",
+    videos."bvid",
+    videos."cid",
+    videos."视频标题",
+    videos."UP主",
+    videos."分区",
+    videos."pub_date",
+    videos."视频链接",
+    videos."封面链接",
+    videos."时长",
+    snapshots."播放量",
+    snapshots."弹幕数",
+    snapshots."点赞数",
+    snapshots."投币数",
+    snapshots."收藏数",
+    snapshots."抓取时间"
+FROM popular_videos AS videos
+LEFT JOIN latest_snapshots AS snapshots
+  ON videos.bvid = snapshots.bvid
+"""
+
+
+def _snapshot_table_exists(conn):
+    cursor = conn.execute(
+        """
+        SELECT 1
+        FROM sqlite_master
+        WHERE type = 'table' AND name = 'popular_video_snapshots'
+        """
+    )
+    return cursor.fetchone() is not None
 
 
 def query_all_videos(limit=200):
@@ -24,13 +65,23 @@ def query_all_videos(limit=200):
 
     try:
         with closing(get_connection()) as conn:
-            cursor = conn.execute(
+            if _snapshot_table_exists(conn):
+                sql = f"""
+                {LATEST_SNAPSHOT_CTE}
+                {LATEST_VIDEO_SELECT}
+                ORDER BY COALESCE(snapshots."播放量", 0) DESC
+                LIMIT ?
                 """
+            else:
+                sql = """
                 SELECT *
                 FROM popular_videos
                 ORDER BY "播放量" DESC
                 LIMIT ?
-                """,
+                """
+
+            cursor = conn.execute(
+                sql,
                 (limit,),
             )
             rows = cursor.fetchall()
@@ -49,8 +100,22 @@ def query_video_summary():
 
     try:
         with closing(get_connection()) as conn:
-            cursor = conn.execute(
+            if _snapshot_table_exists(conn):
+                sql = f"""
+                {LATEST_SNAPSHOT_CTE}
+                SELECT
+                    COUNT(videos.bvid) AS video_count,
+                    COALESCE(SUM(snapshots."播放量"), 0) AS total_views,
+                    COALESCE(AVG(snapshots."播放量"), 0) AS avg_views,
+                    COALESCE(MAX(snapshots."播放量"), 0) AS max_views,
+                    COALESCE(SUM(snapshots."点赞数"), 0) AS total_likes,
+                    COALESCE(SUM(snapshots."收藏数"), 0) AS total_favorites
+                FROM popular_videos AS videos
+                LEFT JOIN latest_snapshots AS snapshots
+                  ON videos.bvid = snapshots.bvid
                 """
+            else:
+                sql = """
                 SELECT
                     COUNT(*) AS video_count,
                     COALESCE(SUM("播放量"), 0) AS total_views,
@@ -60,7 +125,8 @@ def query_video_summary():
                     COALESCE(SUM("收藏数"), 0) AS total_favorites
                 FROM popular_videos
                 """
-            )
+
+            cursor = conn.execute(sql)
             row = cursor.fetchone()
     except sqlite3.OperationalError as error:
         logging.error("查询汇总指标失败: %s", error)
@@ -77,8 +143,23 @@ def query_category_summary(limit=10):
 
     try:
         with closing(get_connection()) as conn:
-            cursor = conn.execute(
+            if _snapshot_table_exists(conn):
+                sql = f"""
+                {LATEST_SNAPSHOT_CTE}
+                SELECT
+                    videos."分区" AS category,
+                    COUNT(videos.bvid) AS video_count,
+                    COALESCE(SUM(snapshots."播放量"), 0) AS total_views,
+                    COALESCE(AVG(snapshots."播放量"), 0) AS avg_views
+                FROM popular_videos AS videos
+                LEFT JOIN latest_snapshots AS snapshots
+                  ON videos.bvid = snapshots.bvid
+                GROUP BY videos."分区"
+                ORDER BY total_views DESC
+                LIMIT ?
                 """
+            else:
+                sql = """
                 SELECT
                     "分区" AS category,
                     COUNT(*) AS video_count,
@@ -88,7 +169,10 @@ def query_category_summary(limit=10):
                 GROUP BY "分区"
                 ORDER BY total_views DESC
                 LIMIT ?
-                """,
+                """
+
+            cursor = conn.execute(
+                sql,
                 (limit,),
             )
             rows = cursor.fetchall()
@@ -97,24 +181,3 @@ def query_category_summary(limit=10):
         return []
 
     return [dict(row) for row in rows]
-def query_category_analysis():
-    """查询分区分析数据，返回 DataFrame 格式。"""
-
-    if not DB_PATH.exists():
-        logging.warning("数据库文件不存在: %s", DB_PATH)
-        return pd.DataFrame()
-
-    try:
-        with closing(get_connection()) as conn:
-            df = pd.read_sql_query(
-                """
-                SELECT *
-                FROM popular_videos
-                """,
-                conn,
-            )
-    except sqlite3.OperationalError as error:
-        logging.error("查询分区分析数据失败: %s", error)
-        return pd.DataFrame()
-    result = analyze_category(df)
-    return result.to_dict(orient="records")
