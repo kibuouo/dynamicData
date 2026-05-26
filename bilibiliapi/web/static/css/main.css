@@ -255,6 +255,44 @@ tbody tr:hover {
     font-weight: 700;
 }
 
+.ranking-panel {
+    margin-top: 18px;
+}
+
+.heat-table-wrap {
+    max-height: min(62vh, 560px);
+}
+
+.heat-score {
+    color: var(--accent-dark);
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 58px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.status-normal {
+    background: #eef8f2;
+    color: #15803d;
+}
+
+.status-warning {
+    background: #fff1f2;
+    color: #be123c;
+}
+
+.status-unknown {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
 .empty-state {
     padding: 42px 20px;
     text-align: center;

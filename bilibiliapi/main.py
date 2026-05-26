@@ -39,7 +39,7 @@ def run():
     saver.save_to_csv(analysis_df, filename="bilibili_popular.csv")
     saver.save_to_json(analysis_df, filename="bilibili_popular.json")
     saver.save_to_sqlite(
-        clean_df,
+        analysis_df,
         db_name="bilibili_data.db",
         table_name="popular_videos",
     )

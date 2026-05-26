@@ -27,6 +27,8 @@ SNAPSHOT_COLUMNS = [
     "点赞数",
     "投币数",
     "收藏数",
+    "综合热度",
+    "疑似异常",
 ]
 SNAPSHOT_TABLE_NAME = "popular_video_snapshots"
 SQLITE_COLUMN_TYPES = {
@@ -46,6 +48,8 @@ SQLITE_COLUMN_TYPES = {
     "点赞数": "INTEGER",
     "投币数": "INTEGER",
     "收藏数": "INTEGER",
+    "综合热度": "REAL",
+    "疑似异常": "INTEGER",
 }
 
 
@@ -86,6 +90,21 @@ class Saver:
             for column in columns
         )
         conn.execute(f"CREATE TABLE IF NOT EXISTS {quoted_table} ({column_sql})")
+
+    def _ensure_table_has_columns(self, conn, table_name, columns):
+        if not self._table_exists(conn, table_name):
+            self._create_table(conn, table_name, columns)
+            return
+
+        existing_columns = self._get_table_columns(conn, table_name)
+        quoted_table = self._quote_identifier(table_name)
+        for column in columns:
+            if column in existing_columns:
+                continue
+
+            column_type = SQLITE_COLUMN_TYPES.get(column, "TEXT")
+            quoted_column = self._quote_identifier(column)
+            conn.execute(f"ALTER TABLE {quoted_table} ADD COLUMN {quoted_column} {column_type}")
 
     def _prepare_columns(self, df, columns):
         table_df = df.copy()
@@ -294,7 +313,7 @@ class Saver:
         video_df = self._prepare_columns(source_df, STABLE_VIDEO_COLUMNS)
         snapshot_df = self._prepare_columns(source_df, SNAPSHOT_COLUMNS)
 
-        self._create_table(conn, SNAPSHOT_TABLE_NAME, SNAPSHOT_COLUMNS)
+        self._ensure_table_has_columns(conn, SNAPSHOT_TABLE_NAME, SNAPSHOT_COLUMNS)
         self._create_snapshot_unique_index(conn, SNAPSHOT_TABLE_NAME)
         self._migrate_old_snapshots(conn, table_name, SNAPSHOT_TABLE_NAME)
 

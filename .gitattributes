@@ -1,0 +1,14 @@
+# Keep text files in this repository on LF line endings.
+* text=auto eol=lf
+
+# Binary files should never be line-ending normalized.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.db binary
+*.sqlite binary
+*.zip binary
+*.gz binary

@@ -8,7 +8,7 @@ from bilibiliapi.analysis.metrics import rate_metrics
 from bilibiliapi.database import DB_PATH, get_connection
 
 
-LATEST_CATEGORY_DATA_SQL = """
+LATEST_SNAPSHOT_CTE = """
 WITH latest_times AS (
     SELECT
         bvid,
@@ -24,26 +24,6 @@ latest_snapshots AS (
       ON snapshots.bvid = latest.bvid
      AND snapshots."抓取时间" = latest.latest_time
 )
-SELECT
-    videos."aid",
-    videos."bvid",
-    videos."cid",
-    videos."视频标题",
-    videos."UP主",
-    videos."分区",
-    videos."pub_date",
-    videos."视频链接",
-    videos."封面链接",
-    videos."时长",
-    snapshots."播放量",
-    snapshots."弹幕数",
-    snapshots."点赞数",
-    snapshots."投币数",
-    snapshots."收藏数",
-    snapshots."抓取时间"
-FROM popular_videos AS videos
-LEFT JOIN latest_snapshots AS snapshots
-  ON videos.bvid = snapshots.bvid
 """
 
 
@@ -56,6 +36,47 @@ def _snapshot_table_exists(conn):
         """
     )
     return cursor.fetchone() is not None
+
+
+def _get_table_columns(conn, table_name):
+    quoted_table = '"' + table_name.replace('"', '""') + '"'
+    return [row[1] for row in conn.execute(f"PRAGMA table_info({quoted_table})")]
+
+
+def _optional_snapshot_column(snapshot_columns, column):
+    quoted_column = '"' + column.replace('"', '""') + '"'
+    if column in snapshot_columns:
+        return f"snapshots.{quoted_column}"
+    return f"NULL AS {quoted_column}"
+
+
+def _latest_category_data_sql(conn):
+    snapshot_columns = _get_table_columns(conn, "popular_video_snapshots")
+    return f"""
+    {LATEST_SNAPSHOT_CTE}
+    SELECT
+        videos."aid",
+        videos."bvid",
+        videos."cid",
+        videos."视频标题",
+        videos."UP主",
+        videos."分区",
+        videos."pub_date",
+        videos."视频链接",
+        videos."封面链接",
+        videos."时长",
+        snapshots."播放量",
+        snapshots."弹幕数",
+        snapshots."点赞数",
+        snapshots."投币数",
+        snapshots."收藏数",
+        {_optional_snapshot_column(snapshot_columns, "综合热度")},
+        {_optional_snapshot_column(snapshot_columns, "疑似异常")},
+        snapshots."抓取时间"
+    FROM popular_videos AS videos
+    LEFT JOIN latest_snapshots AS snapshots
+      ON videos.bvid = snapshots.bvid
+    """
 
 
 def analyze_category(df):
@@ -84,7 +105,7 @@ def query_category_analysis():
     try:
         with closing(get_connection()) as conn:
             if _snapshot_table_exists(conn):
-                sql = LATEST_CATEGORY_DATA_SQL
+                sql = _latest_category_data_sql(conn)
             else:
                 sql = """
                 SELECT *

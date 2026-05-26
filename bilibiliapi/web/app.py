@@ -28,21 +28,47 @@ def format_duration(seconds):
     return f"{minutes}:{seconds:02d}"
 
 
+def format_heat(value):
+    """把综合热度这种小数显示成百分比。"""
+    if value is None:
+        return "-"
+
+    try:
+        return f"{float(value) * 100:.2f}%"
+    except (TypeError, ValueError):
+        return "-"
+
+
+def is_anomaly(value):
+    """判断 SQLite 里保存的疑似异常值是否代表 True。"""
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes", "是"}
+    return bool(value)
+
+
 def create_app():
     """创建 Flask 应用。"""
     app = Flask(__name__)
     app.jinja_env.filters["number"] = format_number
     app.jinja_env.filters["duration"] = format_duration
+    app.jinja_env.filters["heat"] = format_heat
+    app.jinja_env.filters["anomaly"] = is_anomaly
     spider = Spider()
 
     @app.route("/")
     def index():
         videos = query_all_videos(limit=50)
+        heat_videos = query_all_videos(limit=50, order_by="综合热度")
+        heat_videos = [
+            video for video in heat_videos
+            if video.get("综合热度") is not None
+        ]
         summary = query_video_summary()
         categories = query_category_summary(limit=8)
         return render_template(
             "index.html",
             videos=videos,
+            heat_videos=heat_videos,
             summary=summary,
             categories=categories,
         )
@@ -51,7 +77,10 @@ def create_app():
     def videos():
         limit = request.args.get("limit", default=200, type=int)
         limit = min(max(limit, 1), 500)
-        data = query_all_videos(limit=limit)
+        order_by = request.args.get("order_by", default="播放量")
+        if order_by not in {"播放量", "综合热度"}:
+            order_by = "播放量"
+        data = query_all_videos(limit=limit, order_by=order_by)
         return jsonify(data)
 
     @app.route("/api/summary")

@@ -22,30 +22,6 @@ latest_snapshots AS (
 )
 """
 
-LATEST_VIDEO_SELECT = """
-SELECT
-    videos."aid",
-    videos."bvid",
-    videos."cid",
-    videos."视频标题",
-    videos."UP主",
-    videos."分区",
-    videos."pub_date",
-    videos."视频链接",
-    videos."封面链接",
-    videos."时长",
-    snapshots."播放量",
-    snapshots."弹幕数",
-    snapshots."点赞数",
-    snapshots."投币数",
-    snapshots."收藏数",
-    snapshots."抓取时间"
-FROM popular_videos AS videos
-LEFT JOIN latest_snapshots AS snapshots
-  ON videos.bvid = snapshots.bvid
-"""
-
-
 def _snapshot_table_exists(conn):
     cursor = conn.execute(
         """
@@ -57,7 +33,62 @@ def _snapshot_table_exists(conn):
     return cursor.fetchone() is not None
 
 
-def query_all_videos(limit=200):
+def _get_table_columns(conn, table_name):
+    quoted_table = '"' + table_name.replace('"', '""') + '"'
+    return [row[1] for row in conn.execute(f"PRAGMA table_info({quoted_table})")]
+
+
+def _optional_snapshot_column(snapshot_columns, column):
+    quoted_column = '"' + column.replace('"', '""') + '"'
+    if column in snapshot_columns:
+        return f"snapshots.{quoted_column}"
+    return f"NULL AS {quoted_column}"
+
+
+def _latest_video_select(snapshot_columns):
+    return f"""
+    SELECT
+        videos."aid",
+        videos."bvid",
+        videos."cid",
+        videos."视频标题",
+        videos."UP主",
+        videos."分区",
+        videos."pub_date",
+        videos."视频链接",
+        videos."封面链接",
+        videos."时长",
+        snapshots."播放量",
+        snapshots."弹幕数",
+        snapshots."点赞数",
+        snapshots."投币数",
+        snapshots."收藏数",
+        {_optional_snapshot_column(snapshot_columns, "综合热度")},
+        {_optional_snapshot_column(snapshot_columns, "疑似异常")},
+        snapshots."抓取时间"
+    FROM popular_videos AS videos
+    LEFT JOIN latest_snapshots AS snapshots
+      ON videos.bvid = snapshots.bvid
+    """
+
+
+def _snapshot_order_by(snapshot_columns, order_by):
+    if order_by == "综合热度" and "综合热度" in snapshot_columns:
+        return """
+        COALESCE(snapshots."综合热度", 0) DESC,
+        COALESCE(snapshots."播放量", 0) DESC
+        """
+    return 'COALESCE(snapshots."播放量", 0) DESC'
+
+
+def _main_table_order_by(conn, order_by):
+    video_columns = _get_table_columns(conn, "popular_videos")
+    if order_by == "综合热度" and "综合热度" in video_columns:
+        return '"综合热度" DESC'
+    return '"播放量" DESC'
+
+
+def query_all_videos(limit=200, order_by="播放量"):
     """查询热门视频数据，返回字典列表。"""
     if not DB_PATH.exists():
         logging.warning("数据库文件不存在: %s", DB_PATH)
@@ -66,19 +97,20 @@ def query_all_videos(limit=200):
     try:
         with closing(get_connection()) as conn:
             if _snapshot_table_exists(conn):
+                snapshot_columns = _get_table_columns(conn, "popular_video_snapshots")
                 sql = f"""
                 {LATEST_SNAPSHOT_CTE}
-                {LATEST_VIDEO_SELECT}
-                ORDER BY COALESCE(snapshots."播放量", 0) DESC
+                {_latest_video_select(snapshot_columns)}
+                ORDER BY {_snapshot_order_by(snapshot_columns, order_by)}
                 LIMIT ?
                 """
             else:
                 sql = """
                 SELECT *
                 FROM popular_videos
-                ORDER BY "播放量" DESC
+                ORDER BY {order_sql}
                 LIMIT ?
-                """
+                """.format(order_sql=_main_table_order_by(conn, order_by))
 
             cursor = conn.execute(
                 sql,
