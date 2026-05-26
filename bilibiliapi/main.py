@@ -33,6 +33,10 @@ def run():
         reverse=True,
     )
     clean_df = Cleaner.clean_videos(parsed_list)
+    if clean_df.empty:
+        logging.warning("没有抓取到有效视频数据，跳过指标计算和保存。")
+        return
+
     clean_df["抓取时间"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     analysis_df = rate_metrics(clean_df)
 
