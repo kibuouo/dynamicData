@@ -1,6 +1,8 @@
 document.addEventListener("DOMContentLoaded", async () => {
     const onlineTotalItems = document.querySelectorAll(".online-total");
-    const maxOnlineTotalRequests = 20;
+    const pageElement = document.querySelector(".page");
+    const configuredLimit = Number(pageElement?.dataset.onlineTotalLimit);
+    const maxOnlineTotalRequests = configuredLimit > 0 ? configuredLimit : 20;
 
     const requestItems = Array.from(onlineTotalItems).slice(0, maxOnlineTotalRequests);
     const skippedItems = Array.from(onlineTotalItems).slice(maxOnlineTotalRequests);

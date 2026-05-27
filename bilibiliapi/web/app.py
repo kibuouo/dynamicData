@@ -71,6 +71,7 @@ def create_app():
             heat_videos=heat_videos,
             summary=summary,
             categories=categories,
+            online_total_limit=spider.online_total_limit,
         )
 
     @app.route("/api/videos")
@@ -94,6 +95,7 @@ def create_app():
     @app.route("/api/online-totals", methods=["POST"])
     def online_totals():
         videos = request.get_json(silent=True) or []
+        videos = videos[:spider.online_total_limit]
         results = []
 
         for video in videos:

@@ -8,6 +8,6 @@ api:
 spider:
   max_items: 1000
   max_pages: 100
-  online_total_limit: 100
+  online_total_limit: 50
   online_total_delay: 0.3
   page_size: 20

@@ -26,13 +26,20 @@ def run():
     saver = Saver()
 
     raw_data = spider.get_all_popular(max_items=spider.max_items)
+    logging.info("raw_data 数量: %s", len(raw_data))
+
     parsed_list = Parser.parse_popular_items(raw_data)
+    logging.info("parsed_list 数量: %s", len(parsed_list))
+
     parsed_list = sorted(
         parsed_list,
         key=get_video_views,
         reverse=True,
     )
     clean_df = Cleaner.clean_videos(parsed_list)
+    logging.info("clean_df shape: %s", clean_df.shape)
+    logging.info("clean_df columns: %s", list(clean_df.columns))
+
     if clean_df.empty:
         logging.warning("没有抓取到有效视频数据，跳过指标计算和保存。")
         return
