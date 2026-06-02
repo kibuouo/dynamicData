@@ -1,4 +1,6 @@
 {
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe",
+  "python.terminal.activateEnvironment": true,
   "window.autoDetectColorScheme": true,
   "workbench.preferredLightColorTheme": "Catppuccin Latte",
   "workbench.preferredDarkColorTheme": "Catppuccin Macchiato",

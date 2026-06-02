@@ -79,12 +79,26 @@ SQLite 里主要有两张表：
 
 ## 环境准备
 
-建议使用虚拟环境：
+本项目固定使用 `Python 3.14.5`。建议只使用项目根目录下的 `.venv`，不要在同一个项目里混用多个虚拟环境。
+
+Windows / PowerShell：
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\activate
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
+python --version
+```
+
+最后一行应显示 `Python 3.14.5`。
+
+如果在 WSL/Linux 里运行，不要复用 Windows 创建的 `.venv`，因为 Windows 虚拟环境使用 `Scripts/`，Linux 虚拟环境使用 `bin/`。应单独创建 Linux 环境，例如：
+
+```bash
+../.tools/bin/python3.14 -m venv .venv-wsl
+source .venv-wsl/bin/activate
+python -m pip install -r requirements.txt
+python --version
 ```
 
 ## 运行爬虫
