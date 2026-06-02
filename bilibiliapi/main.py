@@ -28,9 +28,24 @@ def run():
     raw_data = spider.get_all_popular(max_items=spider.max_items)
     logging.info("raw_data 数量: %s", len(raw_data))
 
+    fetched_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     parsed_list = Parser.parse_popular_items(raw_data)
     logging.info("parsed_list 数量: %s", len(parsed_list))
 
+    raw_ranking_groups = spider.get_all_ranking()
+    ranking_list = []
+    for group in raw_ranking_groups:
+        ranking_list.extend(
+            Parser.parse_ranking_items(
+                group.get("list", []),
+                rid=group.get("rid", 0),
+                ranking_type=group.get("ranking_type", spider.ranking_type),
+                fetched_at=fetched_at,
+            )
+        )
+    logging.info("ranking_list 数量: %s", len(ranking_list))
+
+    parsed_list.extend(ranking_list)
     parsed_list = sorted(
         parsed_list,
         key=get_video_views,
@@ -44,7 +59,7 @@ def run():
         logging.warning("没有抓取到有效视频数据，跳过指标计算和保存。")
         return
 
-    clean_df["抓取时间"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    clean_df["抓取时间"] = fetched_at
     analysis_df = rate_metrics(clean_df)
 
     saver.save_to_csv(analysis_df, filename="bilibili_popular.csv")
@@ -54,6 +69,14 @@ def run():
         db_name="bilibili_data.db",
         table_name="popular_videos",
     )
+
+    if ranking_list:
+        ranking_df = Cleaner.clean_videos(ranking_list)
+        if not ranking_df.empty:
+            saver.save_ranking_snapshots(
+                ranking_df,
+                db_name="bilibili_data.db",
+            )
 
 
 if __name__ == "__main__":

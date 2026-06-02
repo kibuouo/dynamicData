@@ -7,201 +7,258 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
 </head>
 <body>
+    {% set table_videos = ranking_videos if ranking_videos else videos %}
     <main class="page" data-online-total-limit="{{ online_total_limit }}">
-        <header class="page-header">
+        <header class="dashboard-header">
             <div>
+                <span class="eyebrow">Bilibili Analytics</span>
                 <h1>B站热门视频数据看板</h1>
-                <p>基于本地 SQLite 数据库，展示热门视频、播放量和分区概览。</p>
+                <p>整合热门视频、ranking/v2 榜单、实时在线人数和本地 SQLite 快照，快速判断内容热度与榜单表现。</p>
             </div>
-            <a class="api-link" href="{{ url_for('videos') }}">查看 JSON API</a>
+            <div class="header-actions">
+                <button id="themeToggle" class="theme-toggle" type="button" aria-label="切换深色模式" aria-pressed="false" title="切换深色模式">
+                    <span class="theme-toggle-track" aria-hidden="true">
+                        <span class="theme-toggle-icon theme-toggle-sun"></span>
+                        <span class="theme-toggle-icon theme-toggle-moon"></span>
+                        <span class="theme-toggle-thumb"></span>
+                    </span>
+                </button>
+            </div>
         </header>
 
-        <section class="metrics" aria-label="数据概览">
-            <article class="metric">
-                <span>视频数量</span>
+        <section class="kpi-grid" aria-label="样本视频">
+            <article class="kpi-card">
+                <span>样本视频</span>
                 <strong>{{ summary.get("video_count", 0) | number }}</strong>
+                <em>本地视频库</em>
             </article>
-            <article class="metric">
+            <article class="kpi-card">
                 <span>总播放量</span>
                 <strong>{{ summary.get("total_views", 0) | number }}</strong>
+                <em>最新播放快照</em>
             </article>
-            <article class="metric">
+            <article class="kpi-card">
                 <span>平均播放量</span>
                 <strong>{{ summary.get("avg_views", 0) | number }}</strong>
+                <em>用于判断整体量级</em>
             </article>
-            <article class="metric">
-                <span>总点赞数</span>
-                <strong>{{ summary.get("total_likes", 0) | number }}</strong>
+            <article class="kpi-card">
+                <span>入榜视频</span>
+                <strong>{{ ranking_summary.get("ranking_video_count", 0) | number }}</strong>
+                <em>{{ ranking_summary.get("ranking_latest_time") or "等待榜单抓取" }}</em>
+            </article>
+            <article class="kpi-card">
+                <span>最高榜单分</span>
+                <strong>{{ ranking_summary.get("max_ranking_score", 0) | number }}</strong>
+                <em>ranking/v2 score</em>
             </article>
         </section>
 
-        <section class="chart-grid" aria-label="数据图表">
-            <article class="panel chart-panel chart-panel-wide">
+        <section class="dashboard-grid" aria-label="核心图表">
+            <article class="panel chart-panel chart-panel-large">
                 <div class="section-heading">
-                    <h2>分区播放量排行</h2>
-                    <span>来自 /api/summary</span>
+                    <div>
+                        <h2>分区播放量排行</h2>
+                        <span>按最新播放量快照聚合</span>
+                    </div>
                 </div>
                 <div id="categoryViewsChart" class="chart"></div>
             </article>
 
+            <article class="panel rank-overview">
+                <div class="section-heading">
+                    <div>
+                        <h2>B站排行榜 Top</h2>
+                        <span>来自 /x/web-interface/ranking/v2</span>
+                    </div>
+                </div>
+                <ol class="compact-rank-list">
+                    {% for video in ranking_videos[:8] %}
+                        <li>
+                            <span>{{ video.get("榜单排名", loop.index) }}</span>
+                            <a href="{{ video.get('视频链接') }}" target="_blank" rel="noreferrer">
+                                {{ video.get("视频标题") or video.get("bvid") }}
+                            </a>
+                            <strong>{{ video.get("榜单分数", 0) | number }}</strong>
+                        </li>
+                    {% else %}
+                        <li class="muted">还没有榜单快照。运行 <code>python -m bilibiliapi</code> 后会显示。</li>
+                    {% endfor %}
+                </ol>
+            </article>
+
             <article class="panel chart-panel">
                 <div class="section-heading">
-                    <h2>分区视频占比</h2>
-                    <span>按视频数量统计</span>
+                    <div>
+                        <h2>分区视频占比</h2>
+                        <span>按视频数量统计</span>
+                    </div>
                 </div>
                 <div id="categoryCountChart" class="chart"></div>
             </article>
 
             <article class="panel chart-panel">
                 <div class="section-heading">
-                    <h2>播放量与点赞关系</h2>
-                    <span>Top 80 视频</span>
+                    <div>
+                        <h2>播放量与点赞关系</h2>
+                        <span>观察高播放低互动或高互动样本</span>
+                    </div>
                 </div>
                 <div id="likeScatterChart" class="chart"></div>
             </article>
+
+            <article class="panel chart-panel">
+                <div class="section-heading">
+                    <div>
+                        <h2>榜单分数与播放量</h2>
+                        <span>对比榜单表现和播放体量</span>
+                    </div>
+                </div>
+                <div id="rankingScoreChart" class="chart"></div>
+            </article>
         </section>
 
-        <section class="content-grid">
-            <section class="panel">
+        <section class="rank-columns" aria-label="热门播放 Top">
+            <article class="panel">
                 <div class="section-heading">
-                    <h2>热门视频 Top 50</h2>
-                    <span>按播放量降序</span>
+                    <div>
+                        <h2>热门播放 Top</h2>
+                        <span>本地最新快照</span>
+                    </div>
                 </div>
+                <ol class="summary-list">
+                    {% for video in videos[:6] %}
+                        <li>
+                            <a href="{{ video.get('视频链接') }}" target="_blank" rel="noreferrer">{{ video.get("视频标题", "未命名视频") }}</a>
+                            <strong>{{ video.get("播放量", 0) | number }}</strong>
+                        </li>
+                    {% else %}
+                        <li class="muted">暂无热门视频数据。</li>
+                    {% endfor %}
+                </ol>
+            </article>
 
-                {% if videos %}
-                    <div class="table-wrap">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>排名</th>
-                                    <th>标题</th>
-                                    <th>在线人数</th>
-                                    <th>UP主</th>
-                                    <th>分区</th>
-                                    <th>播放量</th>
-                                    <th>点赞数</th>
-                                    <th>综合热度</th>
-                                    <th>异常</th>
-                                    <th>时长</th>
-                                    <th>抓取时间</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for video in videos %}
-                                    <tr>
-                                        <td>{{ loop.index }}</td>
-                                        <td>
-                                            <a href="{{ video.get('视频链接') }}" target="_blank" rel="noreferrer">
-                                                {{ video.get("视频标题", "未命名视频") }}
-                                            </a>
-                                        </td>
-                                        <td>
-                                            <span
-                                                class="online-total muted"
-                                                data-bvid="{{ video.get('bvid') }}"
-                                                data-cid="{{ video.get('cid') }}"
-                                                data-aid="{{ video.get('aid') }}"
-                                            >查询中</span>
-                                        </td>
-                                        <td>{{ video.get("UP主", "-") }}</td>
-                                        <td>{{ video.get("分区", "-") }}</td>
-                                        <td>{{ video.get("播放量", 0) | number }}</td>
-                                        <td>{{ video.get("点赞数", 0) | number }}</td>
-                                        <td>{{ video.get("综合热度") | heat }}</td>
-                                        <td>
-                                            {% if video.get("疑似异常") is none %}
-                                                <span class="status-badge status-unknown">待计算</span>
-                                            {% elif video.get("疑似异常") | anomaly %}
-                                                <span class="status-badge status-warning">疑似异常</span>
-                                            {% else %}
-                                                <span class="status-badge status-normal">正常</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>{{ video.get("时长") | duration }}</td>
-                                        <td>{{ video.get("抓取时间", "-") }}</td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                {% else %}
-                    <div class="empty-state">
-                        <h2>还没有可展示的数据</h2>
-                        <p>请先在项目根目录运行 <code>python -m bilibiliapi</code> 生成数据库。</p>
-                    </div>
-                {% endif %}
-            </section>
-
-            <aside class="panel side-panel">
+            <article class="panel">
                 <div class="section-heading">
-                    <h2>分区概览</h2>
-                    <span>按播放量排序</span>
-                </div>
-
-                {% if categories %}
-                    <ul class="category-list">
-                        {% for category in categories %}
-                            <li>
-                                <div>
-                                    <strong>{{ category.get("category") or "未分类" }}</strong>
-                                    <span>{{ category.get("video_count", 0) }} 个视频</span>
-                                </div>
-                                <em>{{ category.get("total_views", 0) | number }}</em>
-                            </li>
-                        {% endfor %}
-                    </ul>
-                {% else %}
-                    <div class="empty-state">
-                        <p>暂无分区数据。</p>
+                    <div>
+                        <h2>实时在线 Top</h2>
+                        <span id="onlineRankingTime">最近快照</span>
                     </div>
-                {% endif %}
-            </aside>
+                </div>
+                <ol id="onlineRankingList" class="summary-list">
+                    {% for video in online_ranking %}
+                        <li>
+                            <a href="{{ video.get('视频链接') }}" target="_blank" rel="noreferrer">{{ video.get("视频标题") or video.get("bvid") }}</a>
+                            <strong>{{ video.get("在线人数", 0) | number }}</strong>
+                        </li>
+                    {% else %}
+                        <li class="muted">打开页面后会自动获取在线人数。</li>
+                    {% endfor %}
+                </ol>
+            </article>
+
+            <article class="panel">
+                <div class="section-heading">
+                    <div>
+                        <h2>分区概览</h2>
+                        <span>播放量最高的分区</span>
+                    </div>
+                </div>
+                <ol class="summary-list">
+                    {% for category in categories[:6] %}
+                        <li>
+                            <a href="#rankingTable">{{ category.get("category") or "未分类" }}</a>
+                            <strong>{{ category.get("total_views", 0) | number }}</strong>
+                        </li>
+                    {% else %}
+                        <li class="muted">暂无分区数据。</li>
+                    {% endfor %}
+                </ol>
+            </article>
         </section>
 
-        <section class="panel ranking-panel">
-            <div class="section-heading">
-                <h2>综合热度 Top 50</h2>
-                <span>按综合热度降序</span>
+        <section class="panel table-panel">
+            <div class="table-header">
+                <div>
+                    <h2>综合排表明细</h2>
+                    <p>{{ "优先展示 B站排行榜；也可以按播放、互动、在线人数重新排序。" if ranking_videos else "当前未抓取 B站排行榜，暂时展示热门视频数据。" }}</p>
+                </div>
+                <div class="table-tools">
+                    <input id="videoSearch" type="search" placeholder="搜索标题、UP主、分区">
+                    <select id="categoryFilter">
+                        <option value="">全部</option>
+                    </select>
+                    <select id="sortMode">
+                        <option value="ranking">榜单排名</option>
+                        <option value="rankingScore">榜单分</option>
+                        <option value="views">播放量</option>
+                        <option value="comments">评论数</option>
+                        <option value="likes">点赞数</option>
+                        <option value="favorites">收藏数</option>
+                        <option value="online">在线人数</option>
+                        <option value="heat">综合热度</option>
+                    </select>
+                    <strong id="visibleVideoCount" class="result-count">0 个结果</strong>
+                </div>
             </div>
 
-            {% if heat_videos %}
-                <div class="table-wrap heat-table-wrap">
-                    <table>
+            {% if table_videos %}
+                <div class="table-wrap">
+                    <table id="rankingTable">
                         <thead>
                             <tr>
                                 <th>排名</th>
-                                <th>标题</th>
+                                <th>视频</th>
                                 <th>UP主</th>
                                 <th>分区</th>
-                                <th>综合热度</th>
+                                <th>榜单分</th>
                                 <th>播放量</th>
-                                <th>点赞数</th>
-                                <th>异常</th>
+                                <th>评论</th>
+                                <th>点赞</th>
+                                <th>收藏</th>
+                                <th>在线</th>
+                                <th>热度</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for video in heat_videos %}
-                                <tr>
-                                    <td>{{ loop.index }}</td>
-                                    <td>
-                                        <a href="{{ video.get('视频链接') }}" target="_blank" rel="noreferrer">
-                                            {{ video.get("视频标题", "未命名视频") }}
-                                        </a>
+                            {% for video in table_videos %}
+                                <tr
+                                    class="video-row"
+                                    data-video-row
+                                    data-cover="{{ video.get('封面链接') or '' }}"
+                                    data-title="{{ video.get('视频标题', '未命名视频') }}"
+                                    data-up="{{ video.get('UP主', '-') }}"
+                                    data-category="{{ video.get('分区', '-') }}"
+                                    data-ranking="{{ video.get('榜单排名') or loop.index }}"
+                                    data-ranking-score="{{ video.get('榜单分数') or 0 }}"
+                                    data-views="{{ video.get('播放量', 0) or 0 }}"
+                                    data-comments="{{ video.get('评论数', 0) or 0 }}"
+                                    data-likes="{{ video.get('点赞数', 0) or 0 }}"
+                                    data-favorites="{{ video.get('收藏数', 0) or 0 }}"
+                                    data-heat="{{ video.get('综合热度') or 0 }}"
+                                    data-online="{{ video.get('在线人数') or 0 }}"
+                                >
+                                    <td class="rank-cell">{{ video.get("榜单排名") or loop.index }}</td>
+                                    <td class="video-title-cell">
+                                        <a href="{{ video.get('视频链接') }}" target="_blank" rel="noreferrer">{{ video.get("视频标题", "未命名视频") }}</a>
+                                        <span>{{ video.get("bvid", "-") }}</span>
                                     </td>
                                     <td>{{ video.get("UP主", "-") }}</td>
                                     <td>{{ video.get("分区", "-") }}</td>
-                                    <td><strong class="heat-score">{{ video.get("综合热度") | heat }}</strong></td>
+                                    <td>{{ video.get("榜单分数", 0) | number }}</td>
                                     <td>{{ video.get("播放量", 0) | number }}</td>
+                                    <td>{{ video.get("评论数", 0) | number }}</td>
                                     <td>{{ video.get("点赞数", 0) | number }}</td>
+                                    <td>{{ video.get("收藏数", 0) | number }}</td>
                                     <td>
-                                        {% if video.get("疑似异常") is none %}
-                                            <span class="status-badge status-unknown">待计算</span>
-                                        {% elif video.get("疑似异常") | anomaly %}
-                                            <span class="status-badge status-warning">疑似异常</span>
-                                        {% else %}
-                                            <span class="status-badge status-normal">正常</span>
-                                        {% endif %}
+                                        <span
+                                            class="online-total muted"
+                                            data-bvid="{{ video.get('bvid') }}"
+                                            data-cid="{{ video.get('cid') }}"
+                                            data-aid="{{ video.get('aid') }}"
+                                        >{{ video.get("在线人数", 0) | number if video.get("在线人数") else "查询中" }}</span>
                                     </td>
+                                    <td>{{ video.get("综合热度") | heat }}</td>
                                 </tr>
                             {% endfor %}
                         </tbody>
@@ -209,14 +266,16 @@
                 </div>
             {% else %}
                 <div class="empty-state">
-                    <p>暂无综合热度数据。请先运行 <code>python -m bilibiliapi</code> 生成新的快照数据。</p>
+                    <h2>还没有可展示的数据</h2>
+                    <p>请先运行 <code>python -m bilibiliapi</code> 抓取热门视频和排行榜数据。</p>
                 </div>
             {% endif %}
         </section>
-
     </main>
+
     <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
     <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
     <script src="{{ url_for('static', filename='js/online_totals.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 </body>
 </html>

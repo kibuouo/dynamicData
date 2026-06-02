@@ -2,3 +2,4 @@ data/
 .venv/
 .venv-wsl/
 __pycache__/
+.vscode/

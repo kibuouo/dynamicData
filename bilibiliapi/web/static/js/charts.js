@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("categoryViewsChart"),
         document.getElementById("categoryCountChart"),
         document.getElementById("likeScatterChart"),
+        document.getElementById("rankingScoreChart"),
     ].filter(Boolean);
 
     if (!window.echarts) {
@@ -13,11 +14,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     loadChartData()
-        .then(({ categories, videos }) => {
+        .then(({ categories, videos, rankingVideos }) => {
             const charts = [
                 renderCategoryViewsChart(categories),
                 renderCategoryCountChart(categories),
                 renderLikeScatterChart(videos),
+                renderRankingScoreChart(rankingVideos),
             ].filter(Boolean);
 
             window.addEventListener("resize", () => {
@@ -32,21 +34,24 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 async function loadChartData() {
-    const [summaryResponse, videosResponse] = await Promise.all([
+    const [summaryResponse, videosResponse, rankingResponse] = await Promise.all([
         fetch("/api/summary"),
         fetch("/api/videos?limit=80"),
+        fetch("/api/ranking?limit=80"),
     ]);
 
-    if (!summaryResponse.ok || !videosResponse.ok) {
+    if (!summaryResponse.ok || !videosResponse.ok || !rankingResponse.ok) {
         throw new Error("读取图表接口失败");
     }
 
     const summaryData = await summaryResponse.json();
     const videos = await videosResponse.json();
+    const rankingData = await rankingResponse.json();
 
     return {
         categories: summaryData.categories || [],
         videos,
+        rankingVideos: rankingData.videos || [],
     };
 }
 
@@ -232,6 +237,84 @@ function renderLikeScatterChart(videos) {
                 type: "scatter",
                 symbolSize: value => Math.max(8, Math.min(24, Math.sqrt(value[1]) / 20)),
                 data: points.map(point => [point.views, point.likes, point.title]),
+            },
+        ],
+    });
+
+    return chart;
+}
+
+function renderRankingScoreChart(videos) {
+    const element = document.getElementById("rankingScoreChart");
+    if (!element) {
+        return null;
+    }
+
+    const points = videos
+        .map(video => ({
+            title: video["视频标题"] || video.bvid || "未命名视频",
+            views: Number(video["播放量"] || 0),
+            score: Number(video["榜单分数"] || 0),
+            rank: Number(video["榜单排名"] || 0),
+        }))
+        .filter(video => video.views > 0 && video.score > 0);
+
+    if (points.length === 0) {
+        showChartMessage(element, "暂无榜单分数数据");
+        return null;
+    }
+
+    const chart = echarts.init(element);
+    chart.setOption({
+        color: ["#7c3aed"],
+        tooltip: {
+            trigger: "item",
+            formatter: params => {
+                const point = params.data;
+                return [
+                    escapeHtml(point[3]),
+                    `榜单排名：${point[2]}`,
+                    `榜单分数：${formatNumber(point[1])}`,
+                    `播放量：${formatNumber(point[0])}`,
+                ].join("<br>");
+            },
+        },
+        grid: {
+            left: 64,
+            right: 24,
+            top: 24,
+            bottom: 46,
+        },
+        xAxis: {
+            type: "value",
+            name: "播放量",
+            nameLocation: "middle",
+            nameGap: 30,
+            axisLabel: {
+                color: "#64748b",
+                formatter: formatShortNumber,
+            },
+            splitLine: {
+                lineStyle: { color: "#edf1f5" },
+            },
+        },
+        yAxis: {
+            type: "value",
+            name: "榜单分数",
+            axisLabel: {
+                color: "#64748b",
+                formatter: formatShortNumber,
+            },
+            splitLine: {
+                lineStyle: { color: "#edf1f5" },
+            },
+        },
+        series: [
+            {
+                name: "榜单视频",
+                type: "scatter",
+                symbolSize: value => Math.max(8, Math.min(24, 28 - Math.sqrt(value[2] || 1))),
+                data: points.map(point => [point.views, point.score, point.rank, point.title]),
             },
         ],
     });

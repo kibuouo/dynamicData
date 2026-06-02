@@ -3,11 +3,16 @@
 api:
   base_url: https://api.bilibili.com
   popular_endpoint: /x/web-interface/popular
+  ranking_endpoint: /x/web-interface/ranking/v2
   online_total_endpoint: /x/player/online/total
 
 spider:
   max_items: 1000
   max_pages: 100
+  ranking_rids:
+    - 0
+  ranking_type: all
+  ranking_limit: 100
   online_total_limit: 50
   online_total_delay: 0.3
   page_size: 20

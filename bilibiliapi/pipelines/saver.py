@@ -24,6 +24,7 @@ SNAPSHOT_COLUMNS = [
     "抓取时间",
     "播放量",
     "弹幕数",
+    "评论数",
     "点赞数",
     "投币数",
     "收藏数",
@@ -31,6 +32,15 @@ SNAPSHOT_COLUMNS = [
     "疑似异常",
 ]
 SNAPSHOT_TABLE_NAME = "popular_video_snapshots"
+RANKING_SNAPSHOT_COLUMNS = [
+    "bvid",
+    "榜单分区ID",
+    "榜单类型",
+    "榜单排名",
+    "榜单分数",
+    "榜单抓取时间",
+]
+RANKING_SNAPSHOT_TABLE_NAME = "ranking_video_snapshots"
 SQLITE_COLUMN_TYPES = {
     "aid": "INTEGER",
     "bvid": "TEXT",
@@ -45,11 +55,17 @@ SQLITE_COLUMN_TYPES = {
     "抓取时间": "TEXT",
     "播放量": "INTEGER",
     "弹幕数": "INTEGER",
+    "评论数": "INTEGER",
     "点赞数": "INTEGER",
     "投币数": "INTEGER",
     "收藏数": "INTEGER",
     "综合热度": "REAL",
     "疑似异常": "INTEGER",
+    "榜单分区ID": "INTEGER",
+    "榜单类型": "TEXT",
+    "榜单排名": "INTEGER",
+    "榜单分数": "INTEGER",
+    "榜单抓取时间": "TEXT",
 }
 
 
@@ -207,6 +223,21 @@ class Saver:
             """
         )
 
+    def _create_ranking_snapshot_unique_index(self, conn, table_name):
+        quoted_table = self._quote_identifier(table_name)
+        quoted_bvid = self._quote_identifier("bvid")
+        quoted_rid = self._quote_identifier("榜单分区ID")
+        quoted_type = self._quote_identifier("榜单类型")
+        quoted_time = self._quote_identifier("榜单抓取时间")
+        index_name = self._quote_identifier(f"idx_{table_name}_bvid_rid_type_time_unique")
+        conn.execute(
+            f"""
+            CREATE UNIQUE INDEX IF NOT EXISTS {index_name}
+            ON {quoted_table} ({quoted_bvid}, {quoted_rid}, {quoted_type}, {quoted_time})
+            WHERE {quoted_bvid} IS NOT NULL AND {quoted_time} IS NOT NULL
+            """
+        )
+
     def _upsert_by_bvid(self, conn, df, table_name):
         quoted_table = self._quote_identifier(table_name)
         quoted_bvid = self._quote_identifier("bvid")
@@ -256,6 +287,34 @@ class Saver:
             ON CONFLICT({quoted_bvid}, {quoted_time})
             WHERE {quoted_bvid} IS NOT NULL AND {quoted_time} IS NOT NULL
             DO NOTHING
+            """
+        )
+        conn.execute(f"DROP TABLE IF EXISTS {quoted_tmp_table}")
+
+    def _insert_ranking_snapshots(self, conn, df, table_name):
+        ranking_df = self._prepare_columns(df, RANKING_SNAPSHOT_COLUMNS)
+        quoted_table = self._quote_identifier(table_name)
+        quoted_bvid = self._quote_identifier("bvid")
+        quoted_time = self._quote_identifier("榜单抓取时间")
+        tmp_table_name = f"__tmp_{table_name}_insert"
+        quoted_tmp_table = self._quote_identifier(tmp_table_name)
+        quoted_columns = ", ".join(
+            self._quote_identifier(column) for column in RANKING_SNAPSHOT_COLUMNS
+        )
+
+        conn.execute(f"DROP TABLE IF EXISTS {quoted_tmp_table}")
+        ranking_df.to_sql(tmp_table_name, conn, if_exists="replace", index=False)
+        conn.execute(
+            f"""
+            INSERT INTO {quoted_table} ({quoted_columns})
+            SELECT {quoted_columns}
+            FROM {quoted_tmp_table}
+            WHERE {quoted_bvid} IS NOT NULL AND {quoted_time} IS NOT NULL
+            ON CONFLICT({quoted_bvid}, "榜单分区ID", "榜单类型", {quoted_time})
+            WHERE {quoted_bvid} IS NOT NULL AND {quoted_time} IS NOT NULL
+            DO UPDATE SET
+                "榜单排名" = excluded."榜单排名",
+                "榜单分数" = excluded."榜单分数"
             """
         )
         conn.execute(f"DROP TABLE IF EXISTS {quoted_tmp_table}")
@@ -370,3 +429,32 @@ class Saver:
             logging.info("已写入 SQLite: %s -> %s，共 %s 条", db_name, table_name, len(write_df))
         except Exception as error:
             logging.error("写入 SQLite 失败: %s", error)
+
+    def save_ranking_snapshots(self, df, db_name="bilibili_data.db"):
+        if df.empty:
+            logging.warning("榜单 DataFrame 为空，未写入 SQLite")
+            return
+
+        db_path = self.save_dir / db_name
+
+        try:
+            with closing(sqlite3.connect(db_path)) as conn:
+                with conn:
+                    self._ensure_table_has_columns(
+                        conn,
+                        RANKING_SNAPSHOT_TABLE_NAME,
+                        RANKING_SNAPSHOT_COLUMNS,
+                    )
+                    self._create_ranking_snapshot_unique_index(
+                        conn,
+                        RANKING_SNAPSHOT_TABLE_NAME,
+                    )
+                    self._insert_ranking_snapshots(
+                        conn,
+                        df,
+                        RANKING_SNAPSHOT_TABLE_NAME,
+                    )
+
+            logging.info("已写入 SQLite 榜单快照: %s", db_name)
+        except Exception as error:
+            logging.error("写入榜单快照失败: %s", error)

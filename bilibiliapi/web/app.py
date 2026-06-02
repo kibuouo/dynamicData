@@ -3,7 +3,11 @@ from bilibiliapi.spiders.popular_spider import Spider
 from bilibiliapi.web.db import (
     query_all_videos,
     query_category_summary,
+    query_online_ranking,
+    query_ranking_summary,
+    query_ranking_videos,
     query_video_summary,
+    save_online_snapshots,
 )
 
 
@@ -58,19 +62,19 @@ def create_app():
     @app.route("/")
     def index():
         videos = query_all_videos(limit=50)
-        heat_videos = query_all_videos(limit=50, order_by="综合热度")
-        heat_videos = [
-            video for video in heat_videos
-            if video.get("综合热度") is not None
-        ]
+        ranking_videos = query_ranking_videos(limit=50)
         summary = query_video_summary()
+        ranking_summary = query_ranking_summary()
         categories = query_category_summary(limit=8)
+        online_ranking = query_online_ranking(limit=8)
         return render_template(
             "index.html",
             videos=videos,
-            heat_videos=heat_videos,
+            ranking_videos=ranking_videos,
             summary=summary,
+            ranking_summary=ranking_summary,
             categories=categories,
+            online_ranking=online_ranking,
             online_total_limit=spider.online_total_limit,
         )
 
@@ -127,11 +131,29 @@ def create_app():
             results.append({
                 "success": data is not None,
                 "bvid": bvid,
+                "cid": cid,
+                "aid": aid,
                 "count": count,
                 "message": None if data else "获取在线人数失败",
             })
 
+        save_online_snapshots(results)
         return jsonify(results)
+
+    @app.route("/api/online-ranking")
+    def online_ranking():
+        limit = request.args.get("limit", default=10, type=int)
+        limit = min(max(limit, 1), 50)
+        return jsonify(query_online_ranking(limit=limit))
+
+    @app.route("/api/ranking")
+    def ranking():
+        limit = request.args.get("limit", default=50, type=int)
+        limit = min(max(limit, 1), 200)
+        return jsonify({
+            "summary": query_ranking_summary(),
+            "videos": query_ranking_videos(limit=limit),
+        })
 
     return app
 

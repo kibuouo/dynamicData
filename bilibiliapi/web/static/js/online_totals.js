@@ -35,13 +35,22 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         requestItems.forEach(item => {
             const count = countMap[item.dataset.bvid];
+            const row = item.closest("[data-video-row]");
 
             if (count === null || count === undefined) {
                 item.textContent = "未获取";
+                if (row) {
+                    row.dataset.online = "0";
+                }
             } else {
                 item.textContent = count.toLocaleString();
+                if (row) {
+                    row.dataset.online = String(count);
+                }
             }
         });
+
+        document.dispatchEvent(new CustomEvent("onlineTotalsUpdated"));
     } catch (error) {
         requestItems.forEach(item => {
             item.textContent = "请求失败";

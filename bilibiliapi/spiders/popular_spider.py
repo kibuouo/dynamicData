@@ -7,6 +7,7 @@ from bilibiliapi.core.fetcher import DEFAULT_CONFIG_PATH, PROJECT_ROOT, Fetch
 
 
 RAW_DATA_PATH = PROJECT_ROOT / "data" / "raw_popular.json"
+RAW_RANKING_PATH = PROJECT_ROOT / "data" / "raw_ranking.json"
 
 
 class Spider(Fetch):
@@ -28,11 +29,18 @@ class Spider(Fetch):
             "online_total_endpoint",
             "/x/player/online/total",
         )
+        self.ranking_endpoint = api_config.get(
+            "ranking_endpoint",
+            "/x/web-interface/ranking/v2",
+        )
         self.page_size = spider_config.get("page_size", 20)
         self.max_items = spider_config.get("max_items", 200)
         self.max_pages = spider_config.get("max_pages", 100)
         self.online_total_limit = spider_config.get("online_total_limit", 50)
         self.online_total_delay = spider_config.get("online_total_delay", 0.2)
+        self.ranking_rids = spider_config.get("ranking_rids", [0])
+        self.ranking_type = spider_config.get("ranking_type", "all")
+        self.ranking_limit = spider_config.get("ranking_limit", 100)
 
     def get_popular_page(self, pn=1):
         """获取单页热门视频数据。"""
@@ -72,6 +80,46 @@ class Spider(Fetch):
             return None
 
         return data.get("data", {})
+
+    def get_ranking(self, rid=0, ranking_type=None):
+        """获取 B站 ranking/v2 榜单数据。"""
+        url = f"{self.base_url}{self.ranking_endpoint}"
+        params = {
+            "rid": rid,
+            "type": ranking_type or self.ranking_type,
+        }
+        return self.fetch_json(url, params=params)
+
+    def get_all_ranking(self, rids=None, ranking_type=None, limit=None):
+        """按分区 ID 获取排行榜列表，返回带来源信息的字典列表。"""
+        rids = rids or self.ranking_rids
+        ranking_type = ranking_type or self.ranking_type
+        limit = limit or self.ranking_limit
+        items = []
+
+        for rid in rids:
+            logging.info("正在获取排行榜 rid=%s type=%s...", rid, ranking_type)
+            data = self.get_ranking(rid=rid, ranking_type=ranking_type)
+
+            if not data or data.get("code") != 0:
+                logging.warning("排行榜 rid=%s 数据异常，跳过", rid)
+                continue
+
+            ranking_items = data.get("data", {}).get("list", [])
+            if limit:
+                ranking_items = ranking_items[:limit]
+
+            items.append({
+                "rid": rid,
+                "ranking_type": ranking_type,
+                "list": ranking_items,
+            })
+
+        RAW_RANKING_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with RAW_RANKING_PATH.open("w", encoding="utf-8") as file:
+            json.dump(items, file, ensure_ascii=False, indent=4)
+
+        return items
 
     def get_all_popular(self, max_items=None, max_pages=None):
         """
