@@ -1,6 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
     const chartElements = [
-        document.getElementById("categoryViewsChart"),
         document.getElementById("categoryCountChart"),
         document.getElementById("likeScatterChart"),
         document.getElementById("rankingScoreChart"),
@@ -16,7 +15,6 @@ document.addEventListener("DOMContentLoaded", () => {
     loadChartData()
         .then(({ categories, videos, rankingVideos }) => {
             const charts = [
-                renderCategoryViewsChart(categories),
                 renderCategoryCountChart(categories),
                 renderLikeScatterChart(videos),
                 renderRankingScoreChart(rankingVideos),
@@ -53,72 +51,6 @@ async function loadChartData() {
         videos,
         rankingVideos: rankingData.videos || [],
     };
-}
-
-function renderCategoryViewsChart(categories) {
-    const element = document.getElementById("categoryViewsChart");
-    if (!element) {
-        return null;
-    }
-
-    if (categories.length === 0) {
-        showChartMessage(element, "暂无分区播放量数据");
-        return null;
-    }
-
-    const chart = echarts.init(element);
-    chart.setOption({
-        color: ["#00a1d6"],
-        tooltip: {
-            trigger: "axis",
-            axisPointer: { type: "shadow" },
-            formatter: params => {
-                const item = params[0];
-                return `${escapeHtml(item.name)}<br>播放量：${formatNumber(item.value)}`;
-            },
-        },
-        grid: {
-            left: 84,
-            right: 28,
-            top: 24,
-            bottom: 28,
-        },
-        xAxis: {
-            type: "value",
-            axisLabel: {
-                color: "#6b7280",
-                formatter: formatShortNumber,
-            },
-            splitLine: {
-                lineStyle: { color: "#edf1f5" },
-            },
-        },
-        yAxis: {
-            type: "category",
-            inverse: true,
-            data: categories.map(item => item.category || "未分类"),
-            axisLabel: { color: "#374151" },
-            axisTick: { show: false },
-            axisLine: { show: false },
-        },
-        series: [
-            {
-                name: "播放量",
-                type: "bar",
-                barWidth: 16,
-                data: categories.map(item => Number(item.total_views || 0)),
-                itemStyle: {
-                    borderRadius: [0, 8, 8, 0],
-                    color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
-                        { offset: 0, color: "#44c7f4" },
-                        { offset: 1, color: "#008ec4" },
-                    ]),
-                },
-            },
-        ],
-    });
-
-    return chart;
 }
 
 function renderCategoryCountChart(categories) {

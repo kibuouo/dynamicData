@@ -1,4 +1,7 @@
+from threading import Lock
+
 from flask import Flask, jsonify, render_template, request
+from bilibiliapi.main import run as refresh_local_data
 from bilibiliapi.spiders.popular_spider import Spider
 from bilibiliapi.web.db import (
     query_all_videos,
@@ -58,6 +61,7 @@ def create_app():
     app.jinja_env.filters["heat"] = format_heat
     app.jinja_env.filters["anomaly"] = is_anomaly
     spider = Spider()
+    refresh_lock = Lock()
 
     @app.route("/")
     def index():
@@ -153,6 +157,30 @@ def create_app():
         return jsonify({
             "summary": query_ranking_summary(),
             "videos": query_ranking_videos(limit=limit),
+        })
+
+    @app.route("/api/refresh-data", methods=["POST"])
+    def refresh_data():
+        if not refresh_lock.acquire(blocking=False):
+            return jsonify({
+                "success": False,
+                "message": "数据更新正在进行中，请稍后再试。",
+            }), 409
+
+        try:
+            refresh_local_data()
+        except Exception as error:
+            app.logger.exception("刷新数据失败")
+            return jsonify({
+                "success": False,
+                "message": str(error),
+            }), 500
+        finally:
+            refresh_lock.release()
+
+        return jsonify({
+            "success": True,
+            "message": "数据已更新。",
         })
 
     return app

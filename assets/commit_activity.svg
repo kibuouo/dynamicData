@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="900" height="360" viewBox="0 0 900 360" role="img" aria-labelledby="title desc">
   <title id="title">累计提交次数随时间变化</title>
-  <desc id="desc">当前仓库从 2026-05-18 到 2026-05-26 的累计 Git 提交总数折线图。</desc>
+  <desc id="desc">当前仓库从 2026-05-18 到 2026-06-03 的累计 Git 提交总数折线图。</desc>
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#f8fbff"/>
@@ -22,6 +22,8 @@
 
   <text x="64" y="72" font-family="Segoe UI, Microsoft YaHei, Arial, sans-serif" font-size="22" font-weight="700" fill="#111827">Commit Total</text>
   <text x="64" y="99" font-family="Segoe UI, Microsoft YaHei, Arial, sans-serif" font-size="14" fill="#6b7280">按日期累计当前仓库的 Git 提交总数</text>
+  <text x="830" y="72" text-anchor="end" font-family="Segoe UI, Microsoft YaHei, Arial, sans-serif" font-size="24" font-weight="700" fill="#7c3aed">18</text>
+  <text x="830" y="96" text-anchor="end" font-family="Segoe UI, Microsoft YaHei, Arial, sans-serif" font-size="13" fill="#64748b">截至 2026-06-03</text>
 
   <g stroke="#e5edf5" stroke-width="1">
     <line x1="90" y1="80" x2="830" y2="80"/>
@@ -30,8 +32,8 @@
   </g>
 
   <g font-family="Segoe UI, Microsoft YaHei, Arial, sans-serif" font-size="12" fill="#64748b">
-    <text x="72" y="84" text-anchor="end">12</text>
-    <text x="72" y="179" text-anchor="end">6</text>
+    <text x="72" y="84" text-anchor="end">18</text>
+    <text x="72" y="179" text-anchor="end">9</text>
     <text x="72" y="274" text-anchor="end">0</text>
   </g>
 
@@ -39,7 +41,7 @@
   <path d="M90 80 L90 270" stroke="#cbd5e1" stroke-width="1.5"/>
 
   <polyline
-    points="90,254.2 182.5,222.5 275,206.7 367.5,175 460,143.3 552.5,111.7 645,95.8 737.5,95.8 830,80"
+    points="90,259.4 136.2,238.3 182.5,227.8 228.8,206.7 275,185.6 321.2,164.4 367.5,153.9 413.8,153.9 460,132.8 506.2,101.1 552.5,101.1 598.8,101.1 645,101.1 691.2,101.1 737.5,101.1 783.8,90.6 830,80"
     fill="none"
     stroke="url(#line)"
     stroke-width="5"
@@ -48,38 +50,50 @@
   />
 
   <g fill="#ffffff" stroke-width="4" stroke="url(#line)">
-    <circle cx="90" cy="254.2" r="6"/>
-    <circle cx="182.5" cy="222.5" r="6"/>
-    <circle cx="275" cy="206.7" r="6"/>
-    <circle cx="367.5" cy="175" r="6"/>
-    <circle cx="460" cy="143.3" r="6"/>
-    <circle cx="552.5" cy="111.7" r="6"/>
-    <circle cx="645" cy="95.8" r="6"/>
-    <circle cx="737.5" cy="95.8" r="6"/>
-    <circle cx="830" cy="80" r="6"/>
+    <circle cx="90" cy="259.4" r="5.5"/>
+    <circle cx="136.2" cy="238.3" r="5.5"/>
+    <circle cx="182.5" cy="227.8" r="5.5"/>
+    <circle cx="228.8" cy="206.7" r="5.5"/>
+    <circle cx="275" cy="185.6" r="5.5"/>
+    <circle cx="321.2" cy="164.4" r="5.5"/>
+    <circle cx="367.5" cy="153.9" r="5.5"/>
+    <circle cx="413.8" cy="153.9" r="5.5"/>
+    <circle cx="460" cy="132.8" r="5.5"/>
+    <circle cx="506.2" cy="101.1" r="5.5"/>
+    <circle cx="552.5" cy="101.1" r="5.5"/>
+    <circle cx="598.8" cy="101.1" r="5.5"/>
+    <circle cx="645" cy="101.1" r="5.5"/>
+    <circle cx="691.2" cy="101.1" r="5.5"/>
+    <circle cx="737.5" cy="101.1" r="5.5"/>
+    <circle cx="783.8" cy="90.6" r="5.5"/>
+    <circle cx="830" cy="80" r="5.5"/>
   </g>
 
   <g font-family="Segoe UI, Microsoft YaHei, Arial, sans-serif" font-size="12" fill="#475569">
     <text x="90" y="298" text-anchor="middle">05-18</text>
-    <text x="182.5" y="298" text-anchor="middle">05-19</text>
-    <text x="275" y="298" text-anchor="middle">05-20</text>
-    <text x="367.5" y="298" text-anchor="middle">05-21</text>
-    <text x="460" y="298" text-anchor="middle">05-22</text>
-    <text x="552.5" y="298" text-anchor="middle">05-23</text>
-    <text x="645" y="298" text-anchor="middle">05-24</text>
-    <text x="737.5" y="298" text-anchor="middle">05-25</text>
-    <text x="830" y="298" text-anchor="middle">05-26</text>
+    <text x="182.5" y="298" text-anchor="middle">05-20</text>
+    <text x="275" y="298" text-anchor="middle">05-22</text>
+    <text x="367.5" y="298" text-anchor="middle">05-24</text>
+    <text x="460" y="298" text-anchor="middle">05-26</text>
+    <text x="552.5" y="298" text-anchor="middle">05-28</text>
+    <text x="645" y="298" text-anchor="middle">05-30</text>
+    <text x="737.5" y="298" text-anchor="middle">06-01</text>
+    <text x="830" y="298" text-anchor="middle">06-03</text>
   </g>
 
   <g font-family="Segoe UI, Microsoft YaHei, Arial, sans-serif" font-size="11" font-weight="700">
-    <text x="90" y="237" text-anchor="middle" fill="#0369a1">1</text>
-    <text x="182.5" y="205" text-anchor="middle" fill="#0369a1">3</text>
-    <text x="275" y="190" text-anchor="middle" fill="#0369a1">4</text>
-    <text x="367.5" y="158" text-anchor="middle" fill="#be185d">6</text>
-    <text x="460" y="126" text-anchor="middle" fill="#be185d">8</text>
-    <text x="552.5" y="95" text-anchor="middle" fill="#be185d">10</text>
-    <text x="645" y="79" text-anchor="middle" fill="#6d28d9">11</text>
-    <text x="737.5" y="79" text-anchor="middle" fill="#6d28d9">11</text>
-    <text x="830" y="63" text-anchor="middle" fill="#6d28d9">12</text>
+    <text x="90" y="242" text-anchor="middle" fill="#0369a1">1</text>
+    <text x="136.2" y="221" text-anchor="middle" fill="#0369a1">3</text>
+    <text x="182.5" y="210" text-anchor="middle" fill="#0369a1">4</text>
+    <text x="228.8" y="189" text-anchor="middle" fill="#0369a1">6</text>
+    <text x="275" y="168" text-anchor="middle" fill="#be185d">8</text>
+    <text x="321.2" y="147" text-anchor="middle" fill="#be185d">10</text>
+    <text x="367.5" y="137" text-anchor="middle" fill="#be185d">11</text>
+    <text x="460" y="115" text-anchor="middle" fill="#be185d">13</text>
+    <text x="506.2" y="84" text-anchor="middle" fill="#7c3aed">16</text>
+    <text x="783.8" y="73" text-anchor="middle" fill="#7c3aed">17</text>
+    <text x="830" y="63" text-anchor="middle" fill="#7c3aed">18</text>
   </g>
+
+  <text x="90" y="320" font-family="Segoe UI, Microsoft YaHei, Arial, sans-serif" font-size="12" fill="#64748b">数据来源：git log --date=short --pretty=format:%ad</text>
 </svg>

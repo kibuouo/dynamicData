@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>B站热门视频数据看板</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
 </head>
 <body>
@@ -16,6 +17,10 @@
                 <p>整合热门视频、ranking/v2 榜单、实时在线人数和本地 SQLite 快照，快速判断内容热度与榜单表现。</p>
             </div>
             <div class="header-actions">
+                <button id="refreshDataButton" class="button button-primary" type="button">
+                    获取最新数据
+                </button>
+                <span id="refreshDataStatus" class="refresh-data-status" role="status" aria-live="polite"></span>
                 <button id="themeToggle" class="theme-toggle" type="button" aria-label="切换深色模式" aria-pressed="false" title="切换深色模式">
                     <span class="theme-toggle-track" aria-hidden="true">
                         <span class="theme-toggle-icon theme-toggle-sun"></span>
@@ -55,16 +60,6 @@
         </section>
 
         <section class="dashboard-grid" aria-label="核心图表">
-            <article class="panel chart-panel chart-panel-large">
-                <div class="section-heading">
-                    <div>
-                        <h2>分区播放量排行</h2>
-                        <span>按最新播放量快照聚合</span>
-                    </div>
-                </div>
-                <div id="categoryViewsChart" class="chart"></div>
-            </article>
-
             <article class="panel rank-overview">
                 <div class="section-heading">
                     <div>
