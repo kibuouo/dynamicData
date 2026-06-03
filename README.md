@@ -1,10 +1,5 @@
 # Bilibili 热门视频数据抓取项目
 
-## 提交节奏
-
-![累计提交次数随时间变化](assets/commit_activity.svg)
-
-统计口径：使用当前仓库的 `git log --date=short --pretty=format:%ad`，按日期统计每日提交次数，再计算累计总数。
 
 ## 主要功能
 
