@@ -1,0 +1,396 @@
+{
+  "version": "6",
+  "dialect": "sqlite",
+  "id": "f07be439-767d-47dc-9c8e-b83732672b9b",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "tables": {
+    "collection_runs": {
+      "name": "collection_runs",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "fetched_at": {
+          "name": "fetched_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "video_count": {
+          "name": "video_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "saved_at": {
+          "name": "saved_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "video_online_snapshots": {
+      "name": "video_online_snapshots",
+      "columns": {
+        "bvid": {
+          "name": "bvid",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "cid": {
+          "name": "cid",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "aid": {
+          "name": "aid",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "抓取时间": {
+          "name": "抓取时间",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "在线人数": {
+          "name": "在线人数",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "video_online_snapshots_bvid_popular_videos_bvid_fk": {
+          "name": "video_online_snapshots_bvid_popular_videos_bvid_fk",
+          "tableFrom": "video_online_snapshots",
+          "tableTo": "popular_videos",
+          "columnsFrom": [
+            "bvid"
+          ],
+          "columnsTo": [
+            "bvid"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "video_online_snapshots_bvid_抓取时间_pk": {
+          "columns": [
+            "bvid",
+            "抓取时间"
+          ],
+          "name": "video_online_snapshots_bvid_抓取时间_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "ranking_video_snapshots": {
+      "name": "ranking_video_snapshots",
+      "columns": {
+        "bvid": {
+          "name": "bvid",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "榜单分区ID": {
+          "name": "榜单分区ID",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "榜单类型": {
+          "name": "榜单类型",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "榜单排名": {
+          "name": "榜单排名",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "榜单分数": {
+          "name": "榜单分数",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "榜单抓取时间": {
+          "name": "榜单抓取时间",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "idx_ranking_latest": {
+          "name": "idx_ranking_latest",
+          "columns": [
+            "榜单抓取时间"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "ranking_video_snapshots_bvid_popular_videos_bvid_fk": {
+          "name": "ranking_video_snapshots_bvid_popular_videos_bvid_fk",
+          "tableFrom": "ranking_video_snapshots",
+          "tableTo": "popular_videos",
+          "columnsFrom": [
+            "bvid"
+          ],
+          "columnsTo": [
+            "bvid"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "ranking_video_snapshots_bvid_榜单分区ID_榜单类型_榜单抓取时间_pk": {
+          "columns": [
+            "bvid",
+            "榜单分区ID",
+            "榜单类型",
+            "榜单抓取时间"
+          ],
+          "name": "ranking_video_snapshots_bvid_榜单分区ID_榜单类型_榜单抓取时间_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "popular_video_snapshots": {
+      "name": "popular_video_snapshots",
+      "columns": {
+        "bvid": {
+          "name": "bvid",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "抓取时间": {
+          "name": "抓取时间",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "播放量": {
+          "name": "播放量",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "弹幕数": {
+          "name": "弹幕数",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "评论数": {
+          "name": "评论数",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "点赞数": {
+          "name": "点赞数",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "投币数": {
+          "name": "投币数",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "收藏数": {
+          "name": "收藏数",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "综合热度": {
+          "name": "综合热度",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "疑似异常": {
+          "name": "疑似异常",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "popular_video_snapshots_bvid_popular_videos_bvid_fk": {
+          "name": "popular_video_snapshots_bvid_popular_videos_bvid_fk",
+          "tableFrom": "popular_video_snapshots",
+          "tableTo": "popular_videos",
+          "columnsFrom": [
+            "bvid"
+          ],
+          "columnsTo": [
+            "bvid"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "popular_video_snapshots_bvid_抓取时间_pk": {
+          "columns": [
+            "bvid",
+            "抓取时间"
+          ],
+          "name": "popular_video_snapshots_bvid_抓取时间_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "popular_videos": {
+      "name": "popular_videos",
+      "columns": {
+        "bvid": {
+          "name": "bvid",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "aid": {
+          "name": "aid",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "cid": {
+          "name": "cid",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "视频标题": {
+          "name": "视频标题",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "UP主": {
+          "name": "UP主",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "分区": {
+          "name": "分区",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "pub_date": {
+          "name": "pub_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "视频链接": {
+          "name": "视频链接",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "封面链接": {
+          "name": "封面链接",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "时长": {
+          "name": "时长",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    }
+  },
+  "views": {},
+  "enums": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  },
+  "internal": {
+    "indexes": {}
+  }
+}
