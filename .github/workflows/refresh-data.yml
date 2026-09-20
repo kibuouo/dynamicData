@@ -1,0 +1,47 @@
+name: Refresh cloud data
+
+on:
+  schedule:
+    # UTC 00:17/06:17/12:17/18:17 = 北京时间 08:17/14:17/20:17/02:17。
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: refresh-cloud-data
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: python -m pip install -r requirements.txt
+      - name: Check configuration
+        env:
+          SITES_URL: ${{ vars.SITES_URL }}
+          SITES_SYNC_TOKEN: ${{ secrets.SITES_SYNC_TOKEN }}
+        run: |
+          test -n "$SITES_URL" || { echo "Missing SITES_URL repository variable"; exit 1; }
+          test -n "$SITES_SYNC_TOKEN" || { echo "Missing SITES_SYNC_TOKEN repository secret"; exit 1; }
+      - name: Collect and sync a complete snapshot
+        env:
+          SITES_URL: ${{ vars.SITES_URL }}
+          SITES_SYNC_TOKEN: ${{ secrets.SITES_SYNC_TOKEN }}
+        run: python -m bilibiliapi.cloud_sync --max-items 200
+      - name: Keep capture for troubleshooting
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: cloud-capture-${{ github.run_id }}
+          path: data/cloud_capture.json
+          if-no-files-found: ignore
+          retention-days: 7
+
