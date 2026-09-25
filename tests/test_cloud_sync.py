@@ -18,9 +18,20 @@ class CloudSyncTests(unittest.TestCase):
         self.assertIsNone(capture["videos"][0]["score"])
         self.assertAlmostEqual(capture["videos"][0]["heat"], 0.045)
 
-    def test_partial_collection_is_not_published(self):
+    def test_page_rejection_saves_earlier_pages_as_a_clear_partial_capture(self):
         spider = Mock(page_size=1)
         spider.get_popular_page.side_effect = [{"code": 0, "data": {"list": [video()]}}, {"code": -412}]
+        spider.get_ranking.return_value = {"code": 0, "data": {"list": [video()]}}
+        capture = collect_capture(2, spider=spider, sleep=lambda _: None)
+        self.assertFalse(capture["popularComplete"])
+        self.assertTrue(capture["rankingAvailable"])
+        self.assertEqual(capture["videos"][0]["rank"], 1)
+        self.assertIn("partial 1/200", capture["source"])
+        spider.get_ranking.assert_called_once()
+
+    def test_first_page_rejection_preserves_existing_cloud_data(self):
+        spider = Mock(page_size=1)
+        spider.get_popular_page.return_value = {"code": -352}
         with self.assertRaises(RuntimeError):
             collect_capture(2, spider=spider, sleep=lambda _: None)
         spider.get_ranking.assert_not_called()
@@ -39,3 +50,4 @@ class CloudSyncTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             upload_capture(capture, "https://example.com", "test-secret")
         self.assertFalse(post.call_args.kwargs["allow_redirects"])
+
