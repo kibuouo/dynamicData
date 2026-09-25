@@ -28,7 +28,7 @@ test('new snapshots retain history and query the latest values',async()=>{
 });
 
 const json=(body,status=200)=>Response.json(body,{status});
-function incoming(overrides={}){const fetchedAt=new Date().toISOString();return {...capture,id:'scheduled-'+fetchedAt,fetchedAt,rankingAvailable:true,...overrides};}
+function incoming(overrides={}){const fetchedAt=new Date().toISOString();return {...capture,id:'scheduled-'+fetchedAt,fetchedAt,popularComplete:true,rankingAvailable:true,...overrides};}
 function request(body,token='test-token'){return new Request('https://example.com/api/ingest',{method:'POST',headers:{Authorization:'Bearer '+token},body:JSON.stringify(body)});}
 
 test('ingestion requires a secret, validates records, and rejects stale snapshots',async()=>{
@@ -48,8 +48,9 @@ test('ingestion requires a secret, validates records, and rejects stale snapshot
 
 test('unavailable ranking clears current ranks while preserving historical snapshots',async()=>{
  const db=sqliteBinding();migrate(db);await ensureCapture(db,capture);
- const next=incoming({rankingAvailable:false,videos:[{...capture.videos[0],title:'Updated title',rank:null,score:null}]});
+ const next=incoming({popularComplete:true,rankingAvailable:false,videos:[{...capture.videos[0],title:'Updated title',rank:null,score:null}]});
  assert.equal((await handleIngest(request(next),{DB:db,SITES_SYNC_TOKEN:'test-token'},json)).status,200);
  const result=await readDashboard(db);assert.equal(result.videos.length,1);assert.equal(result.videos[0].rank,null);
  assert.equal(result.videos[0].title,'Updated title');assert.equal(result.counts.rankingSnapshots,100);db.sqlite.close();
 });
+
