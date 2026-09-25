@@ -23,6 +23,7 @@ export function validateCapture(capture){
   if(v.rank!==null&&(!Number.isInteger(v.rank)||v.rank<1||v.rank>100))throw new Error('榜单排名无效');
  }
  if(typeof capture.rankingAvailable!=='boolean'||capture.rankingAvailable!==capture.videos.some(v=>v.rank!==null))throw new Error('排行榜状态不一致');
+ if(typeof capture.popularComplete!=='boolean')throw new Error('热门列表完成状态无效');
  return capture;
 }
 
@@ -51,3 +52,4 @@ export async function handleIngest(request,env,json){
   return json({success:true,id:capture.id,videoCount:capture.videos.length,fetchedAt:capture.fetchedAt});
  }catch(error){console.error('Cloud sync failed',error);return json({error:'同步未完成，已有数据保持不变'},503);}
 }
+
