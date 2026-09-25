@@ -26,7 +26,7 @@ def require_items(response, label):
     return items
 
 
-def build_capture(popular, ranking, fetched_at):
+def build_capture(popular, ranking, fetched_at, popular_complete=True, failure_reason=None):
     if not popular:
         raise RuntimeError("热门列表为空，不上传不完整快照")
     ranks = {item["bvid"]: (i, item.get("score")) for i, item in enumerate(ranking, 1)}
@@ -47,10 +47,13 @@ def build_capture(popular, ranking, fetched_at):
         })
     if not videos:
         raise RuntimeError("清洗后没有有效的热门数据")
+    popular_source = "Bilibili popular"
+    if not popular_complete:
+        popular_source += f" (partial {len(popular)}/200; {failure_reason})"
     return {
         "id": "scheduled-" + fetched_at, "fetchedAt": fetched_at,
-        "source": "GitHub Actions / Bilibili popular" + (" + ranking/v2" if ranking else " (ranking unavailable)"),
-        "rankingAvailable": bool(ranking), "videos": videos,
+        "source": "GitHub Actions / " + popular_source + (" + ranking/v2" if ranking else " (ranking unavailable)"),
+        "popularComplete": popular_complete, "rankingAvailable": bool(ranking), "videos": videos,
     }
 
 
@@ -59,10 +62,20 @@ def collect_capture(max_items=200, spider=None, sleep=time.sleep):
         raise ValueError("max_items 必须在 1 到 400 之间")
     spider = spider or Spider()
     popular = []
+    popular_complete = True
+    failure_reason = None
     for page in range(1, (max_items + spider.page_size - 1) // spider.page_size + 1):
         if page > 1:
             sleep(1)
-        items = require_items(spider.get_popular_page(page), f"热门第 {page} 页")
+        try:
+            items = require_items(spider.get_popular_page(page), f"热门第 {page} 页")
+        except RuntimeError as error:
+            if not popular:
+                raise
+            popular_complete = False
+            failure_reason = f"page {page} blocked (-352 or API error)"
+            logging.warning("热门列表在第 %s 页被拒，本次改为同步已取得的 %s 条热门数据。", page, len(popular))
+            break
         popular.extend(items)
         if len(popular) >= max_items or not items:
             break
@@ -73,7 +86,7 @@ def collect_capture(max_items=200, spider=None, sleep=time.sleep):
         logging.warning("排行榜不可用，本次仅更新热门视频：%s", error)
         ranking = []
     fetched_at = datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
-    return build_capture(popular[:max_items], ranking, fetched_at)
+    return build_capture(popular[:max_items], ranking, fetched_at, popular_complete, failure_reason)
 
 
 def upload_capture(capture, site_url, token):
@@ -112,3 +125,4 @@ def main():
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     main()
+
