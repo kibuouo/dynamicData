@@ -28,7 +28,10 @@ async function loadData(){
  const selection=$('category').value;$('category').replaceChildren();const all=document.createElement('option');all.value='';all.textContent='全部分区';$('category').append(all);categories.forEach(c=>{const o=document.createElement('option');o.value=o.textContent=c;$('category').append(o)});$('category').value=categories.includes(selection)?selection:'';
  const stale=Date.now()-Date.parse(result.latest.fetchedAt)>8*3600000;
  $('cloud-pill').textContent=stale?'数据待更新':'云端已连接';const time=new Date(result.latest.fetchedAt).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai',hour12:false});$('cloud-message').textContent=`本次 ${data.length} 条视频 · 累计 ${result.counts.snapshots} 条互动快照 · ${result.counts.rankingSnapshots} 条榜单快照。最近采集：${time}（北京时间）。每 6 小时自动更新${stale?'；更新可能延迟，当前展示上次成功数据':''}。`;
- $('data-note').textContent=(data.some(v=>v.rank!==null)?'云端保存的真实采集数据':'本次排行榜不可用，仅更新热门数据')+' · 在线人数未采集';render();
+ const notices=[];
+ if((result.latest.source||'').includes('partial'))notices.push('热门列表本次只采集到部分数据');
+ if(!data.some(v=>v.rank!==null))notices.push('排行榜本次不可用');
+ $('data-note').textContent=(notices.length?notices.join('；'):'云端保存的真实采集数据')+' · 在线人数未采集';render();
  }catch(error){$('cloud-pill').textContent='读取失败';$('cloud-message').textContent=loaded?'暂时无法读取云端数据，当前保留上次已加载的结果。请点击重新读取。':'暂时无法读取云端数据，请点击重新读取重试。';if(!loaded)$('table-total').textContent='数据尚未载入';}
  finally{$('reload').disabled=false;}
 }
@@ -36,3 +39,4 @@ async function loadData(){
 document.querySelectorAll('nav a').forEach(a=>a.addEventListener('click',()=>{document.querySelectorAll('nav a').forEach(n=>n.classList.remove('active'));a.classList.add('active')}));render();loadData();
 // Only reread saved cloud data; opening a page never triggers upstream scraping.
 setInterval(()=>{if(!document.hidden&&!$('reload').disabled)loadData();},5*60*1000);
+
